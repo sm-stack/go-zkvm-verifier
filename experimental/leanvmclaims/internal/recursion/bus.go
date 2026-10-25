@@ -3,10 +3,12 @@
 package recursion
 
 import (
+	"errors"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
 	"github.com/sm-stack/go-zkvm-verifier/internal/gf2"
 	"math/bits"
 	"slices"
+	"sync"
 
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/classkey"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/machine"
@@ -107,7 +109,7 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 	}
 	out.point = point
 	// The class key owns all public columns; no proof-supplied evaluation is trusted.
-	// One retained scratch buffer, capped at 24 MiB; concurrent callers own separate buffers.
+	// Scratch has one owner per verification and a configurable retention budget.
 	sizes := make(map[int]bool)
 	count := 0
 	for _, b := range blocks {
@@ -192,26 +194,42 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 	return out, r.Err
 }
 
-const maxBusScratch = 1 << 20
+const defaultScratchCacheBytes = 24 << 20
 
-var busScratch = make(chan []E, 1)
+var busScratch = struct {
+	sync.Mutex
+	limit  int
+	buffer []E
+}{limit: defaultScratchCacheBytes}
 
+// SetScratchCacheLimit changes the process-wide retained scratch budget in bytes.
+// Zero disables caching, including buffers returned by in-flight verifications.
+func SetScratchCacheLimit(bytes int) error {
+	if bytes < 0 {
+		return errors.New("leanvmclaims: negative scratch cache limit")
+	}
+	busScratch.Lock()
+	defer busScratch.Unlock()
+	busScratch.limit = bytes
+	if cap(busScratch.buffer) > bytes/24 {
+		busScratch.buffer = nil
+	}
+	return nil
+}
 func takeBusScratch(n int) []E {
-	select {
-	case b := <-busScratch:
-		if cap(b) >= n {
-			return b[:n]
-		}
-	default:
+	busScratch.Lock()
+	b := busScratch.buffer
+	busScratch.buffer = nil
+	busScratch.Unlock()
+	if cap(b) >= n {
+		return b[:n]
 	}
 	return make([]E, n)
 }
 func releaseBusScratch(b []E) {
-	if cap(b) > maxBusScratch {
-		return
-	}
-	select {
-	case busScratch <- b:
-	default:
+	busScratch.Lock()
+	defer busScratch.Unlock()
+	if busScratch.limit != 0 && cap(b) <= busScratch.limit/24 && cap(b) > cap(busScratch.buffer) {
+		busScratch.buffer = b
 	}
 }

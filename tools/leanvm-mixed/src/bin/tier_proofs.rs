@@ -46,7 +46,16 @@ fn main() {
     stats.counts[TableId::ALU] *= 2;
     let first = LeafShape::measured(&stats, Rate::MIN);
     stats.counts[TableId::ALU] *= 2;
-    let second = LeafShape::measured(&stats, Rate::MIN);
+    let one_tier = std::env::args().any(|a| a == "--one-tier");
+    // The one-tier corpus also covers asymmetric leaf rates in the root session.
+    let second = LeafShape::measured(
+        &stats,
+        if one_tier {
+            Rate::new(2).unwrap()
+        } else {
+            Rate::MIN
+        },
+    );
     let classes = [
         LeafClass {
             program: bounds,
@@ -60,7 +69,6 @@ fn main() {
             shape: second,
         },
     ];
-    let one_tier = std::env::args().any(|a| a == "--one-tier");
     let shape = TreeShape {
         leaf: first,
         arity_0: 1,

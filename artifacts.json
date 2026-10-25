@@ -12,8 +12,8 @@
     "sha256": "0d653b724ebc7d2a28b5f3024037ee090ce09dd556a41cb14e7089eb966b567c"
   },
   "experimental/leanvmclaims/testdata/class-mutations.json": {
-    "bytes": 2534,
-    "sha256": "422a16fb6f9ba354debad71f8a6a1f6957d415c9bab7166aaf4022b4300b6e6c"
+    "bytes": 2861,
+    "sha256": "5bc3eee7a3b79341a3f0fd9bffb7c3ad3e021b20b1d78ec2c2acaf69b1678aae"
   },
   "experimental/leanvmclaims/testdata/classes.json": {
     "bytes": 9926,
@@ -205,27 +205,27 @@
   },
   "experimental/leanvmclaims/testdata/one-tier-components.json": {
     "bytes": 8231,
-    "sha256": "7aab6c9a0979afcab7b9bc2b779fc60df9331b41db9cc3cee9d00483faa78820"
+    "sha256": "ef1438afa3243c9615d3f9748974b44ec3b413195d5e7442fb8d4ab9a83970ad"
   },
   "experimental/leanvmclaims/testdata/one-tier.key.gz": {
     "bytes": 20246,
     "sha256": "fb8c15dc074ec460a08123aaf29883cf6bf080810edaa6211fe87b80437a002d"
   },
   "experimental/leanvmclaims/testdata/one-tier/class-key.bin.gz": {
-    "bytes": 4935391,
-    "sha256": "4a28e8c37ce13d1a3b2c2c6ac349a3957f999b96fe05d33c692fd1a44c06d4a1"
+    "bytes": 4916964,
+    "sha256": "03357abeba327240d810487d5a71a093345eba49c94fdb18c93d82238407e193"
   },
   "experimental/leanvmclaims/testdata/one-tier/class-key.digest.gz": {
     "bytes": 70,
-    "sha256": "f2ca2b89717ca1887175a203f53cf3fe2168827341ee2f062736a9025783854d"
+    "sha256": "30263692940ac86a01ad5f986da63abffd113543b18913b48b6f902d0b14c221"
   },
   "experimental/leanvmclaims/testdata/one-tier/first-class1/claims.bin.gz": {
     "bytes": 67,
     "sha256": "9ad03078b6b26cd1d90373d9c5e3d9c250b1f42f7e835fc64cfa2893d0813037"
   },
   "experimental/leanvmclaims/testdata/one-tier/first-class1/root.bin.gz": {
-    "bytes": 225675,
-    "sha256": "bdc60d6c6d7ff6c953e056d4f3cd172c3658b383546c1dc69f95b3f561b20d97"
+    "bytes": 218941,
+    "sha256": "aea5e6c9b95fd4899b6a95951c5fed951654b35f815edc6c8d3ffb2029567911"
   },
   "experimental/leanvmclaims/testdata/one-tier/first-class1/seal.bin.gz": {
     "bytes": 23,
@@ -236,8 +236,8 @@
     "sha256": "7adf06eb2682def3644e59eb342f6095bf55c97a092db3da9316acd081d19a50"
   },
   "experimental/leanvmclaims/testdata/one-tier/first/root.bin.gz": {
-    "bytes": 226206,
-    "sha256": "6d0d7e02488c13419c01510d44e3dd9a1accbeb99c9295c59699183bce2b4d8e"
+    "bytes": 226253,
+    "sha256": "35997c788e58c70f79dd204c31162475f7cb60805cd7485ba399076bc02a6810"
   },
   "experimental/leanvmclaims/testdata/one-tier/first/seal.bin.gz": {
     "bytes": 23,
@@ -248,8 +248,8 @@
     "sha256": "7fcf56dbed85f0d505547815aac490dcd74f92eae3eade9ac465bab147bad360"
   },
   "experimental/leanvmclaims/testdata/one-tier/one-member/root.bin.gz": {
-    "bytes": 226269,
-    "sha256": "8fa6efd59a90d188ccd8b66a1e383d170a070058377ecd6497fa79a46494d1c5"
+    "bytes": 225739,
+    "sha256": "ddc460b9db63c19a5b2958bece33feecec1e8d4336d477ae764714a3be3e6f0d"
   },
   "experimental/leanvmclaims/testdata/one-tier/one-member/seal.bin.gz": {
     "bytes": 23,
@@ -257,19 +257,19 @@
   },
   "experimental/leanvmclaims/testdata/one-tier/provenance.json": {
     "bytes": 2092,
-    "sha256": "d0b40d15f2532997b73f1f816a7735dcf34fbdd2586d7240c8ea861a07581b8a"
+    "sha256": "e06ede0a55ba4349725f6d9791c4abaf157aac9e2aa765306a4da7e5d0bae3bb"
   },
   "experimental/leanvmclaims/testdata/one-tier/small-node/claims.bin.gz": {
     "bytes": 121,
     "sha256": "3e7c22cadff2c4e62ceece0ce79a0b7d372fe203ea3868bbb0301b8b2c390b57"
   },
   "experimental/leanvmclaims/testdata/one-tier/small-node/root.bin.gz": {
-    "bytes": 243409,
-    "sha256": "de95e76b3fcb83b78e24a09bc68df29c38af7d32a6c9a2be87feb9e880171a41"
+    "bytes": 242805,
+    "sha256": "8e588256c4766e6ae67edf5b4f95ac355ebfa873df57a7f41e58be22d5100348"
   },
   "experimental/leanvmclaims/testdata/one-tier/small-node/seal.bin.gz": {
-    "bytes": 151628,
-    "sha256": "cbfcb2d1b3da317c8de6d85c129fc0d7975ed8b5f6e6f7a4e53fb83460e00e3e"
+    "bytes": 152865,
+    "sha256": "01e4be19739da33f70359229ecc36ddb8a3a94129f5f30ab93550f532c1ec519"
   },
   "experimental/leanvmclaims/testdata/production-components.json": {
     "bytes": 2209,

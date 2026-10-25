@@ -220,5 +220,6 @@ reverified without regenerating leaf proofs.
 Batch field evaluation uses local `DotBase` and `EqExpand` kernels. The arm64
 PMULL path and portable path are compared against independent bit-serial field
 arithmetic, including chunk boundaries and unaligned word input. Recursion
-evaluation retains at most one 24 MiB scratch buffer; concurrent calls acquire
-exclusive buffers, and larger buffers are not retained.
+evaluation retains one scratch buffer with a default 24 MiB budget; concurrent
+calls acquire exclusive buffers. `SetScratchCacheLimit` changes this budget;
+buffers exceeding it are not retained.

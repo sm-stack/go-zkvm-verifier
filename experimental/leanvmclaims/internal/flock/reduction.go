@@ -151,8 +151,9 @@ func (m MatrixClaim) Check(c *machine.Circuit, scratch []E) error {
 		return ErrReduction
 	}
 	weights := lagrangeWeights(m.Skip)
-	row := func(i int) E { return weights[i&63].Mul(field.EqBits(uint64(i>>6), m.Rows)) }
-	col := func(i int) E { return m.Slices[i&63].Mul(field.EqBits(uint64(i>>6), m.Cols)) }
+	rows, cols := field.EqTable(m.Rows), field.EqTable(m.Cols)
+	row := func(i int) E { return weights[i&63].Mul(rows[i>>6]) }
+	col := func(i int) E { return m.Slices[i&63].Mul(cols[i>>6]) }
 	got, err := c.Bilinear(m.Alpha, row, col, scratch)
 	if err != nil {
 		return err

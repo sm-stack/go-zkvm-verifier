@@ -10,6 +10,22 @@
     },
     {
       "accept": false,
+      "name": "zero-leaves",
+      "offset": 8,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 0
+    },
+    {
+      "accept": false,
+      "name": "invalid-small-flag",
+      "offset": 328,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 2
+    },
+    {
+      "accept": false,
       "name": "first-k-zero",
       "offset": 48,
       "root_accept": false,

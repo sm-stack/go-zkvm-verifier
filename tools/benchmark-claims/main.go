@@ -17,7 +17,9 @@ func main() {
 	dir := flag.String("dir", "", "Rust artifact directory")
 	mode := flag.String("mode", "verify", "load or verify")
 	n := flag.Int("n", 100, "verification iterations")
+	cache := flag.Int("scratch-cache-bytes", 24<<20, "process-wide retained scratch budget; 0 disables caching")
 	flag.Parse()
+	must(leanvmclaims.SetScratchCacheLimit(*cache))
 	if *dir == "" || (*mode != "load" && *mode != "verify") || *n < 1 {
 		flag.Usage()
 		os.Exit(2)
@@ -37,7 +39,7 @@ func main() {
 	must(e)
 	load := time.Since(start)
 	runtime.ReadMemStats(&after)
-	result := map[string]any{"upstream_commit": leanvmclaims.UpstreamCommit, "class_key_bytes": len(key), "load_ns": load.Nanoseconds(), "load_allocated_bytes": after.TotalAlloc - before.TotalAlloc, "load_heap_inuse": after.HeapInuse, "workers": runtime.GOMAXPROCS(0)}
+	result := map[string]any{"upstream_commit": leanvmclaims.UpstreamCommit, "class_key_bytes": len(key), "load_ns": load.Nanoseconds(), "load_allocated_bytes": after.TotalAlloc - before.TotalAlloc, "load_heap_inuse": after.HeapInuse, "workers": runtime.GOMAXPROCS(0), "scratch_cache_bytes": *cache}
 	if *mode == "verify" {
 		root, seal := read("root.bin"), read("seal.bin")
 		claims, e := v.DecodeClaims(read("claims.bin"))

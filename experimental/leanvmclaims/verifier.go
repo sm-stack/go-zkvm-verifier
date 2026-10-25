@@ -97,3 +97,9 @@ func (v *ClassVerifier) Config() ClassConfig {
 	}
 	return c
 }
+
+// SetScratchCacheLimit sets the process-wide retained verification scratch limit
+// in bytes (default 24 MiB). Zero releases the cache and disables retention;
+// negative limits return an error. It is safe during concurrent verification.
+// This limits cached memory, not active verification allocations or class keys.
+func SetScratchCacheLimit(bytes int) error { return recursion.SetScratchCacheLimit(bytes) }

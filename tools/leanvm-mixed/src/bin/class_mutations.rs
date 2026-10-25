@@ -22,6 +22,8 @@ fn main() {
     let circuits = tiers + 8 + 2 * 48;
     let changes = vec![
         ("original", shape, word(shape)),
+        ("zero-leaves", 8, 0),
+        ("invalid-small-flag", shape + 40, 2),
         ("first-k-zero", 48, 0),
         ("second-k-zero", 184, 0),
         ("second-ram", 160, 28),
@@ -57,7 +59,12 @@ fn main() {
             bytes.copy_within(152..288, 16);
             bytes[152..288].copy_from_slice(&a);
         }
-        let (classes, shape) = descriptor(&bytes);
+        let descriptor_bytes = if name == "zero-leaves" || name == "invalid-small-flag" {
+            &key
+        } else {
+            &bytes
+        };
+        let (classes, shape) = descriptor(descriptor_bytes);
         let digest = Tree::mixed_class_key_digest(&bytes);
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             match Tree::mixed_classes_from_bytes(&classes, shape, &bytes, &digest) {

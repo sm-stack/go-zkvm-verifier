@@ -135,3 +135,36 @@ func (c *Circuit) Bilinear(alpha field.Element, row, column func(int) field.Elem
 	}
 	return total, nil
 }
+
+// BilinearCoefficients returns A and B such that Bilinear(alpha) = A + alpha*B.
+// Gate scratch depends only on column weights, so both sums share one traversal.
+func (c *Circuit) BilinearCoefficients(row, column func(int) field.Element, scratch []field.Element) (a, b field.Element, err error) {
+	if len(scratch) < len(c.Gates) {
+		return a, b, errors.New("leanvmclaims: circuit scratch too short")
+	}
+	constant := column(c.ConstPos)
+	for i, g := range c.Gates {
+		if g[0] == 1 {
+			scratch[i] = scratch[g[1]].Add(scratch[g[2]])
+			continue
+		}
+		slot := g[1]
+		if g[0] == 2 {
+			slot = g[3]
+		} else if g[0] == 3 {
+			slot = g[2]
+		}
+		value := column(int(slot))
+		left, right := value, constant
+		if g[0] == 2 {
+			left, right = scratch[g[1]], scratch[g[2]]
+		} else if g[0] == 3 {
+			left = scratch[g[1]]
+		}
+		scratch[i] = value
+		weight := row(int(slot))
+		a = a.Add(weight.Mul(left))
+		b = b.Add(weight.Mul(right))
+	}
+	return
+}

@@ -83,6 +83,13 @@ mutations += [
  ('experimental/leanvmclaims/internal/classkey/key.go', ' || n != expectedCircuits', ' || (false && n != expectedCircuits)', './experimental/leanvmclaims', 'TestClassContainerGuards'),
  ('experimental/leanvmclaims/internal/classkey/key.go', 'c.Heights != k.Heights[tier]', '(false && c.Heights != k.Heights[tier])', './experimental/leanvmclaims', 'TestClassContainerGuards'),
 ]
+mutations += [
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', 'tag = append(tag, byte(leaf.LeafRate))', 'tag = append(tag, byte(first.LeafRate))', './experimental/leanvmclaims', 'TestRustOneTierVerdicts'),
+ ('experimental/leanvmclaims/internal/classkey/key.go', ' || n > uint64(len(data)-r.pos)/880', '', './experimental/leanvmclaims', 'TestRejectBeforeLargeAllocation'),
+ ('experimental/leanvmclaims/internal/wire/proof.go', ' || (statementWords >= 0 && n != uint64(statementWords))', '', './experimental/leanvmclaims', 'TestRejectBeforeLargeAllocation'),
+ ('experimental/leanvmclaims/claims.go', 'if err := claims.Check(math.MaxUint64, math.MaxUint32); err != nil {', 'if err := claims.Check(math.MaxUint64, math.MaxUint32); false && err != nil {', './experimental/leanvmclaims', 'TestEncodeClaimsCanonical'),
+ ('experimental/leanvmclaims/verifier.go', 'if v == nil || v.class == nil {\n\t\treturn ErrClass', 'if false {\n\t\treturn ErrClass', './experimental/leanvmclaims', 'TestNilVerifier'),
+]
 # A pre-existing failing regression must never count as a caught mutation.
 for package in sorted({case[3] for case in mutations}):
     tests = sorted({case[4] for case in mutations if case[3] == package})

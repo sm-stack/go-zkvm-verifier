@@ -23,7 +23,7 @@ func TestAuthenticatedClassMutations(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "testdata/class-mutations.json", &vectors)
-	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != 15 {
+	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != 17 {
 		t.Fatal("missing class vectors")
 	}
 	for _, c := range vectors.Cases {

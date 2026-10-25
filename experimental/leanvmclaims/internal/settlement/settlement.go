@@ -76,15 +76,11 @@ func Matrices(k *classkey.Validated, root wire.Root) error {
 	for i, c := range s.Circuits {
 		r, w := field.EqTable(rows[:c.KLog]), field.EqTable(cols[:c.KLog])
 		row, col := func(i int) E { return r[i] }, func(i int) E { return w[i] }
-		a, err := c.Bilinear(E{}, row, col, scratch)
+		a, b, err := c.BilinearCoefficients(row, col, scratch)
 		if err != nil {
 			return err
 		}
-		ab, err := c.Bilinear(field.One, row, col, scratch)
-		if err != nil {
-			return err
-		}
-		if a != values[2*i] || ab.Add(a) != values[2*i+1] {
+		if a != values[2*i] || b != values[2*i+1] {
 			return ErrStatement
 		}
 	}

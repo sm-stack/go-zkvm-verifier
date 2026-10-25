@@ -157,3 +157,18 @@ mutations recompute the digest and compare the checked Rust loader, including a
 valid changed member capacity that Rust accepts. Authentication-failure tests
 remain separate. Root-rate, nonempty seals, and one-tier node layout selection
 have explicit regressions.
+
+The one-tier corpus uses leaf rates 1 and 2, exercising the additional leaf-rate
+binding in the root session. Malformed class vectors also include zero leaf
+count and an unsupported small-tier flag. Duplicate defensive checks remain in
+place; a surviving removal mutant is not necessarily a reachable acceptance bug.
+
+### Scratch cache policy
+
+`SetScratchCacheLimit(bytes)` sets a process-wide retained scratch budget,
+defaulting to 24 MiB. `SetScratchCacheLimit(0)` immediately drops the cached
+buffer and disables subsequent retention, including returns from in-flight
+verifications. The setting is safe to change concurrently and does not alter
+proof acceptance. It does not limit live verification memory or loaded class
+keys. Concurrent verifications own separate buffers, with at most one retained
+when they finish. Negative budgets return an error without changing policy.

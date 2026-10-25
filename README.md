@@ -190,6 +190,8 @@ CGO_ENABLED=0 GOMAXPROCS=2 go test ./experimental/leanvmclaims -run '^$' -fuzz '
 
 Tests replay one- and two-tier roots, rehashed descriptor mutations, and an Optimism operational-class aggregate against pinned Rust verdicts.
 
+`leanvmclaims.SetScratchCacheLimit(0)` disables the process-wide scratch cache for memory-sensitive hosts; the default retained budget is 24 MiB. This does not cap active verification memory.
+
 Class-key or digest errors exit **2**; rejected root/claims/seal inputs exit **1**. The command adds no byte-size cap. See [PORTING.md](experimental/leanvmclaims/PORTING.md) for the wire format, integration adapter, source mapping and fixture generation.
 
 ## Security assumptions and limits

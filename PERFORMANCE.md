@@ -54,12 +54,13 @@ RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 Measured on the same host, with one worker per implementation. Each number is
 the median of three sequential process runs, 100 warmed verifications per run.
 Rust and Go were alternated on identical input bytes. The baseline is commit
-`399813f`; current Go uses batched field kernels and reusable equality scratch.
+`f74db79`; current Go precomputes equality weights and evaluates both matrix
+coefficients in one traversal. Other host work was active during measurement.
 
 | Fixture | Baseline Go | Current Go | Rust | Current Go / Rust |
 | --- | ---: | ---: | ---: | ---: |
-| Optimism operational class, 6 claims | 18.877 ms | 9.761 ms | 3.947 ms | 2.47× |
-| Fork example, 357 claims | 29.812 ms | 11.516 ms | 5.435 ms | 2.12× |
+| Optimism operational class, 6 claims | 9.898 ms | 6.065 ms | 4.085 ms | 1.48× |
+| Fork example, 357 claims | 11.695 ms | 7.851 ms | 5.458 ms | 1.44× |
 
 Both use leanVM `59c25cccfd5742f8216f259f9dd4d80d9a5f66e5` and a
 60,027,800-byte key, but different authenticated class configurations. The
@@ -68,14 +69,19 @@ the fork example starts `05860eb9`. The operational fixture is shipped in
 `experimental/leanvmclaims/testdata/production` and includes program executions
 and signatures. It is not a full-capacity stress benchmark.
 
-Operational-class verification allocated 8,108,248 bytes / 3,564 objects per
-operation, versus 13,244,632 bytes / 3,568 objects at baseline. The 357-claim
-fixture allocated 8,167,664 bytes / 3,706 objects, versus 18,465,008 bytes / 3,711
-objects. Equality scratch retains at most one 24 MiB buffer across calls;
-concurrent calls own separate scratch. Retained memory is not included in
-per-operation allocated bytes.
+Operational-class verification allocated 8,120,536 bytes / 3,566 objects per
+operation, versus 8,108,248 bytes / 3,564 objects at baseline. The 357-claim
+fixture allocated 8,179,952 bytes / 3,708 objects, versus 8,167,664 bytes / 3,706
+objects. Precomputed equality tables add 12 KiB and two allocations per operation.
 
-Operational-class cold loading took 121.738 ms in Go and 99.353 ms in Rust.
+Equality scratch retains one buffer with a default 24 MiB budget across calls;
+concurrent calls own separate scratch. `SetScratchCacheLimit(0)` disables caching
+and releases its retained buffer. With caching disabled, the operational fixture
+measured 6.138 ms and 13,256,920 bytes/op; the 357-claim fixture measured 7.972 ms
+and 18,477,296 bytes/op. Retained memory is excluded from bytes/op. The cache limit
+does not cap active verification allocations or loaded class keys.
+
+Operational-class cold loading took 124.597 ms in Go and 101.113 ms in Rust.
 Go allocated about 75.7 MB during loading, including its defensive key copy and
 lazy circuit metadata initialization. This work does not optimize class loading.
 The Go verification loop decodes root/seal bytes each time; Rust verifies decoded
@@ -91,6 +97,8 @@ cargo build --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.tom
 # Run sequentially, three times each:
 GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claims-production -n 100
 tools/leanvm-mixed/target/release/benchmark /tmp/claims-production
+# Measure without retaining scratch between verifications:
+GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claims-production -n 100 -scratch-cache-bytes 0
 ```
 
 For the fork example, `generate_production.py OUT` generates its separate class
