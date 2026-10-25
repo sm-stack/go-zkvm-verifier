@@ -12,14 +12,18 @@ import (
 
 var ErrClass = errors.New("leanvmclaims: invalid class or inconsistent verifier data")
 
-// Config is the expected relation, supplied independently of the class key.
-// All sizes are protocol integers, not host-sized allocation requests.
+// LeafClass mirrors rec/tree/mixed.rs::LeafClass and ProgramClass.
+type LeafClass struct {
+	LogBytecode, LogRAM, LogAdvice, ImageWords, MaxMembers uint64
+	LeafHeights                                            [11]uint64
+	LeafRate                                               uint64
+}
+
+// Config is derived from the authenticated class-key descriptor.
 type Config struct {
-	LogBytecode, LogRAM, LogAdvice, ImageWords uint64
-	LeafHeights                                [11]uint64
-	LeafRate, Arity0, Arity, TreeRate          uint64
-	Claims, Groups                             uint64
-	Small                                      *SmallTier
+	Leaves                                  []LeafClass
+	Arity0, Arity, TreeRate, Claims, Groups uint64
+	Small                                   *SmallTier
 }
 type SmallTier struct{ Arity, Claims, Groups uint64 }
 
@@ -29,23 +33,19 @@ func appendWords(dst []byte, words ...uint64) []byte {
 	}
 	return dst
 }
-func (c Config) Descriptor() ([]byte, error) {
-	if c.LeafRate < 1 || c.LeafRate > 4 || c.TreeRate < 1 || c.TreeRate > 4 || c.Arity0 == 0 || c.Arity < 2 {
-		return nil, ErrClass
+func (c Config) check() error {
+	if len(c.Leaves) == 0 || c.TreeRate < 1 || c.TreeRate > 4 || c.Arity0 == 0 || c.Arity < 2 {
+		return ErrClass
 	}
-	out := appendWords(nil, c.LogBytecode, c.LogRAM, c.LogAdvice, c.ImageWords)
-	out = appendWords(out, c.LeafHeights[:]...)
-	out = appendWords(out, c.LeafRate, c.Arity0, c.Arity, c.TreeRate, c.Claims, c.Groups)
-	if c.Small == nil {
-		out = appendWords(out, 0)
-	} else {
-		s := c.Small
-		if s.Arity < 2 || s.Arity > c.Arity || s.Claims > c.Claims || s.Groups > c.Groups {
-			return nil, ErrClass
+	for _, leaf := range c.Leaves {
+		if leaf.LeafRate < 1 || leaf.LeafRate > 4 || leaf.MaxMembers == 0 {
+			return ErrClass
 		}
-		out = appendWords(out, 1, s.Arity, s.Claims, s.Groups)
 	}
-	return appendWords(out, 2), nil
+	if s := c.Small; s != nil && (s.Arity < 2 || s.Arity > c.Arity || s.Claims > c.Claims || s.Groups > c.Groups) {
+		return ErrClass
+	}
+	return nil
 }
 
 // Validated holds the layout and sessions derived from an authenticated key.
@@ -61,32 +61,27 @@ type Validated struct {
 	ProgramDigest, RootSession, SealSession     [32]byte
 }
 
-func Load(data []byte, pin [32]byte, config Config) (*Validated, error) {
-	desc, err := config.Descriptor()
+// Load mirrors embed.rs::mixed_classes_from_bytes and design.rs::Design::new.
+func Load(data []byte, pin [32]byte) (*Validated, error) {
+	k, err := Decode(data, pin)
 	if err != nil {
 		return nil, err
 	}
+	config := k.Config
 	s, err := machine.Load()
 	if err != nil {
 		return nil, err
 	}
-	// RiscvProgram::padded and mixed_placeholder_with_root. Validate before
-	// shifting or streaming the zero image; do not allocate dummy program tables.
-	if config.LogBytecode < uint64(s.MinBytecode) || config.LogBytecode > uint64(s.MaxMu-s.TupleBits) || config.LogRAM > 27 || config.LogAdvice > 26 || config.ImageWords == 0 || config.ImageWords&(config.ImageWords-1) != 0 || config.ImageWords > uint64(1)<<config.LogRAM {
-		return nil, ErrClass
+	// Validate dimensions before shifting or hashing the zero placeholder image.
+	for _, c := range config.Leaves {
+		if c.LogBytecode < uint64(s.MinBytecode) || c.LogBytecode > uint64(s.MaxMu-s.TupleBits) || c.LogRAM > 27 || c.LogAdvice > 26 || c.ImageWords == 0 || c.ImageWords&(c.ImageWords-1) != 0 || c.ImageWords > uint64(1)<<c.LogRAM {
+			return nil, ErrClass
+		}
+		if _, err = s.LeafSize(c.LogBytecode, c.LogRAM, c.LogAdvice, c.LeafHeights); err != nil {
+			return nil, err
+		}
 	}
-	_, err = s.LeafSize(config.LogBytecode, config.LogRAM, config.LogAdvice, config.LeafHeights)
-	if err != nil {
-		return nil, err
-	}
-	k, err := Decode(data, pin, desc)
-	if err != nil {
-		return nil, err
-	}
-	if config.Small != nil {
-		small := *config.Small
-		config.Small = &small
-	}
+	first := config.Leaves[0]
 	v := &Validated{Key: k, Config: config, Polynomials: 2 + len(k.Heights)}
 	for _, h := range k.Heights {
 		l, err := machine.NewLayout(h)
@@ -102,7 +97,7 @@ func Load(data []byte, pin [32]byte, config Config) (*Validated, error) {
 		smallCount--
 	}
 	v.TierShift = bits.Len(uint(smallCount - 1))
-	v.DenseVars = [4]int{int(config.LogBytecode) + s.TupleBits, bits.Len64(config.ImageWords - 1), v.Layouts[0].FixedVars + v.TierShift, 0}
+	v.DenseVars = [4]int{int(first.LogBytecode) + s.TupleBits, bits.Len64(first.ImageWords - 1), v.Layouts[0].FixedVars + v.TierShift, 0}
 	if len(v.Layouts) == 2 {
 		v.DenseVars[3] = v.Layouts[1].FixedVars
 	}
@@ -115,15 +110,26 @@ func Load(data []byte, pin [32]byte, config Config) (*Validated, error) {
 		if c.StatementWords != uint64(v.StatementWords) {
 			return nil, ErrClass
 		}
-		v.Codes[i] = uint64(i)
+		v.Codes[i] = uint64(i) << 1
 		if i == smallCount {
-			v.Codes[i] = uint64(1) << uint(v.TierShift)
+			v.Codes[i] = uint64(1) << uint(v.TierShift+1)
+		}
+		if i >= len(config.Leaves) {
+			v.Codes[i] |= 1
 		}
 	}
-	v.ProgramDigest = placeholderDigest(k.Placeholder, config)
-	tag := append([]byte("leanvm-tree-17"), v.ProgramDigest[:]...)
-	tag = append(tag, []byte("/mixed-program/1")...)
-	tag = appendWords(tag, config.LeafHeights[:]...)
+	v.ProgramDigest = placeholderDigest(k.Placeholders[0], first)
+	tag := append([]byte("leanvm-tree-18"), v.ProgramDigest[:]...)
+	tag = append(tag, []byte("/mixed-members/2")...)
+	tag = appendWords(tag, first.MaxMembers, uint64(len(config.Leaves)-1))
+	for i, leaf := range config.Leaves[1:] {
+		digest := placeholderDigest(k.Placeholders[i+1], leaf)
+		tag = append(tag, digest[:]...)
+		tag = appendWords(tag, leaf.LeafHeights[:]...)
+		tag = appendWords(tag, leaf.MaxMembers)
+		tag = append(tag, byte(leaf.LeafRate))
+	}
+	tag = appendWords(tag, first.LeafHeights[:]...)
 	tag = appendWords(tag, config.Arity0, config.Arity, uint64(v.StatementWords), 1, config.Claims, config.Groups)
 	if config.Small != nil {
 		tag = appendWords(tag, config.Small.Arity, config.Small.Claims, config.Small.Groups)
@@ -131,13 +137,13 @@ func Load(data []byte, pin [32]byte, config Config) (*Validated, error) {
 	for _, h := range k.Heights {
 		tag = appendWords(tag, h[:]...)
 	}
-	tag = append(tag, byte(config.LeafRate), byte(config.TreeRate))
+	tag = append(tag, byte(first.LeafRate), byte(config.TreeRate))
 	v.RootSession = transcript.Session(tag, nil)
 	v.SealSession = transcript.Session([]byte("leanvm/mixed-tree-seal/v2"), pin[:])
 	return v, nil
 }
 
-func placeholderDigest(root [32]byte, c Config) [32]byte {
+func placeholderDigest(root [32]byte, c LeafClass) [32]byte {
 	h, _ := blake2s.New256(nil)
 	h.Write([]byte("leanvm-rv64im-committed-1"))
 	h.Write(root[:])

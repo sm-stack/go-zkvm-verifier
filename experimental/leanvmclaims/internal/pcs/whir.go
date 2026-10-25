@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Bain Capital Crypto, LP and Ron Rothblum
 // Modifications copyright 2026 Succinct Labs, Benedikt Bunz, William Wang
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// Port of pcs/src/whir/verify.rs at da5c964831c993b011464e4fd4a573b7172d5295.
+// Port of pcs/src/whir/verify.rs at 59c25cccfd5742f8216f259f9dd4d80d9a5f66e5.
 package pcs
 
 import (

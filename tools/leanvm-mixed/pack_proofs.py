@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package unchanged pinned upstream example outputs as deterministic gzip fixtures.
+"""Package pinned Rust proof-generator outputs as deterministic gzip fixtures.
 
 Run after regenerate.py --export-proofs DIR. The stored manifest checks the
 uncompressed upstream bytes; gzip is only a storage format, not proof encoding.
@@ -9,19 +9,21 @@ import hashlib
 import json
 from pathlib import Path
 
-from common import ROOT, PIN, checkout, write_gzip, write_manifest
+from common import ROOT, PIN, write_gzip, write_manifest
 p = argparse.ArgumentParser()
 p.add_argument('source', type=Path)
 p.add_argument('--check', action='store_true')
 a = p.parse_args()
-manifest = json.loads((a.source/'provenance.json').read_text())
-if manifest['upstream_commit'] != PIN:
+if (a.source/'upstream-commit').read_text().strip() != PIN:
     raise SystemExit('wrong upstream pin')
+names = ('first', 'first-class1', 'one-member', 'small-node', 'wide', 'fold-dedup')
+expected = {'class-key.bin', 'class-key.digest'} | {
+    f'{name}/{part}.bin' for name in names for part in ('root', 'claims', 'seal')}
+manifest = {'upstream_commit': PIN, 'generator': 'tools/leanvm-mixed/src/bin/tier_proofs.rs',
+            'files': {name: {'bytes': (a.source/name).stat().st_size,
+                             'sha256': hashlib.sha256((a.source/name).read_bytes()).hexdigest()}
+                      for name in sorted(expected)}}
 target = ROOT/'experimental/leanvmclaims/testdata/roots'
-expected = {'class-key.bin', 'class-key.digest', 'class.bin'} | {
-    f'distinct-{n}/{part}.bin' for n in (1, 2, 4) for part in ('root', 'claims', 'seal')}
-if set(manifest['files']) != expected:
-    raise SystemExit('missing or unexpected upstream outputs')
 for name, entry in manifest['files'].items():
     raw = (a.source/name).read_bytes()
     if len(raw) != entry['bytes'] or hashlib.sha256(raw).hexdigest() != entry['sha256']:

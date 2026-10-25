@@ -39,7 +39,7 @@ fn main() {
     for rate in [0u8, 1, 2, 3, 4, 5, 255] {
         for circuit in [0u64, 1, u64::MAX] {
             for high in [0u64, 1] {
-                let mut bytes = b"LVMT\x14\x00".to_vec();
+                let mut bytes = b"LVMT\x15\x00".to_vec();
                 bytes.push(rate);
                 bytes.extend(1u32.to_le_bytes());
                 for word in [circuit, high, 0] {

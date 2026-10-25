@@ -102,7 +102,7 @@ func Seal(k *classkey.Validated, root wire.Root, proof transcript.Proof) error {
 	if err != nil {
 		return err
 	}
-	if position != 0 {
+	if position >= len(k.Config.Leaves) {
 		dense := elements(root.Words[3 : 3+k.DensePointVars])
 		values := elements(root.Words[3+k.DensePointVars : 3+k.DensePointVars+k.Polynomials])
 		for poly := 2; poly < k.Polynomials; poly++ {

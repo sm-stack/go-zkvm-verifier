@@ -1,47 +1,68 @@
-//! Explicit, comparatively expensive first/small-node/Wide fixture generation.
+//! Generate the small two-class member-list corpus with the pinned Rust prover.
 use leanvm::aggregate::{
-    Capacity, ClaimShape, LeafShape, MixedLeaf, ProgramClass, Tier, Tree, TreeShape,
+    Accumulator, Capacity, ClaimShape, LeafClass, LeafShape, MixedLeaf, ProgramClass, Tier, Tree,
+    TreeShape,
 };
-use leanvm::asm::{Asm, Reg};
-use leanvm::{PerTable, Program, Rate, TableId};
-use leanvm_mixed_reference::hex;
+use leanvm::asm::{Addi, Asm, Bne, Reg};
+use leanvm::{Program, Rate, TableId};
+use leanvm_mixed_reference::{PIN, hex};
 use std::path::Path;
+
+fn program(members: &[[u64; 4]]) -> Program {
+    let output = leanvm_guest::members::output(members);
+    let mut a = Asm::new();
+    a.li(Reg::T0, 9000)
+        .label("loop")
+        .i(Addi, Reg::T0, Reg::T0, -1)
+        .branch(Bne, Reg::T0, Reg::ZERO, "loop");
+    for (reg, value) in [Reg::A0, Reg::A1, Reg::A2, Reg::A3].into_iter().zip(output) {
+        a.li(reg, value);
+    }
+    a.exit();
+    Program::new(&a.finish(), 0x10000000, vec![], 0, 0).unwrap()
+}
 fn main() {
     parallel::init_with_threads(std::num::NonZeroUsize::new(2).unwrap()).unwrap();
     let arg = std::env::args().nth(1).unwrap();
     let out = Path::new(&arg);
     std::fs::create_dir_all(out).unwrap();
-    let originals: Vec<_> = (0..4)
-        .map(|i| {
-            Program::new(
-                &Asm::new().li(Reg::A0, i).exit().finish(),
-                0x10000000,
-                vec![],
-                0,
-                0,
-            )
-            .unwrap()
-        })
-        .collect();
-    let class = ProgramClass {
+    let members = [
+        vec![[1, 2, 3, 4], [2, 3, 4, 5], [2, 3, 4, 5], [3, 4, 5, 6]],
+        vec![[9; 4]],
+        vec![[10; 4]],
+    ];
+    let bounds = ProgramClass {
         log_bytecode: 12,
         log_ram: 4,
         log_advice: 4,
         image_words: 1,
+        max_members: 4,
     };
-    let programs: Vec<_> = originals
+    let programs: Vec<_> = members
         .iter()
-        .map(|p| class.normalize(p).unwrap())
+        .map(|m| bounds.normalize(&program(m)).unwrap())
         .collect();
     let mut stats = programs[0].measure(&[]).unwrap();
-    for p in programs.iter().skip(1) {
-        let s = p.measure(&[]).unwrap();
-        stats.counts = PerTable::from_fn(|t: TableId| stats.counts[t].max(s.counts[t]));
-    }
-    let leaf = LeafShape::measured(&stats, Rate::MIN);
+    stats.counts[TableId::ALU] *= 2;
+    let first = LeafShape::measured(&stats, Rate::MIN);
+    stats.counts[TableId::ALU] *= 2;
+    let second = LeafShape::measured(&stats, Rate::MIN);
+    let classes = [
+        LeafClass {
+            program: bounds,
+            shape: first,
+        },
+        LeafClass {
+            program: ProgramClass {
+                max_members: 1,
+                ..bounds
+            },
+            shape: second,
+        },
+    ];
     let shape = TreeShape {
-        leaf,
-        arity_0: 2,
+        leaf: first,
+        arity_0: 1,
         arity: 2,
         rate: Rate::MIN,
         claims: Some(ClaimShape {
@@ -52,58 +73,77 @@ fn main() {
             small: Some(Tier {
                 arity: 2,
                 capacity: Capacity {
-                    claims: 4,
+                    claims: 5,
                     groups: 2,
                 },
             }),
         }),
     };
-    eprintln!("building two-tier class");
-    let tree = Tree::mixed(class, shape).unwrap();
+    eprintln!("building two-class member tree");
+    let tree = Tree::mixed_classes(&classes, shape).unwrap();
     let sealer = tree.seal_prover().unwrap();
-    let roots = sealer.roots();
-    let key = tree.mixed_verifier_bytes(&roots).unwrap();
+    let key = tree.mixed_verifier_bytes(&sealer.roots()).unwrap();
     let pin = Tree::mixed_class_key_digest(&key);
-    let verifier = Tree::mixed_from_bytes(class, shape, &key, &pin).unwrap();
     std::fs::write(out.join("class-key.bin"), &key).unwrap();
     std::fs::write(out.join("class-key.digest"), hex(&pin)).unwrap();
-    let config = serde_json::json!({"LogBytecode":12,"LogRAM":4,"LogAdvice":4,"ImageWords":1,"LeafHeights":leaf.heights().into_values(),"LeafRate":1,"Arity0":2,"Arity":2,"TreeRate":1,"Claims":8,"Groups":4,"Small":{"Arity":2,"Claims":4,"Groups":2}});
-    std::fs::write(
-        out.join("class-config.json"),
-        serde_json::to_vec_pretty(&config).unwrap(),
-    )
-    .unwrap();
-    let prover = class.prover(leaf);
-    let runs: Vec<_> = programs
-        .iter()
-        .map(|p| prover.prove(p, &[]).unwrap())
-        .collect();
-    let leaves: Vec<_> = programs
-        .iter()
-        .zip(&runs)
-        .map(|(p, r)| MixedLeaf {
-            key: p.verifying_key(),
-            proof: &r.proof,
-            output: r.output,
-        })
-        .collect();
-    eprintln!("proving first-level roots");
-    let first = tree.aggregate_programs(&leaves[..2], None).unwrap();
-    let second = tree.aggregate_programs(&leaves[2..], None).unwrap();
-    eprintln!("proving small node");
-    let small = tree.aggregate(&[&first, &first], None).unwrap();
-    eprintln!("proving Wide node");
-    let wide = tree.aggregate(&[&first, &second], None).unwrap();
-    for (name, root) in [("first", first), ("small-node", small), ("wide", wide)] {
+    let verifier = Tree::mixed_classes_from_bytes(&classes, shape, &key, &pin).unwrap();
+    let mut roots = vec![];
+    for (i, name) in ["first", "first-class1", "one-member"]
+        .into_iter()
+        .enumerate()
+    {
+        let class = if i == 1 { 1 } else { 0 };
+        let run = classes[class]
+            .program
+            .prover(classes[class].shape)
+            .prove(&programs[i], &[])
+            .unwrap();
+        let root = tree
+            .aggregate_programs_at(
+                class,
+                &[MixedLeaf {
+                    key: programs[i].verifying_key(),
+                    proof: &run.proof,
+                    output: run.output,
+                    members: &members[i],
+                }],
+                None,
+            )
+            .unwrap();
+        roots.push((name, root));
+        eprintln!("proved {name}");
+    }
+    let small = tree.aggregate(&[&roots[0].1, &roots[1].1], None).unwrap();
+    roots.push(("small-node", small));
+    let mut acc = Accumulator::default();
+    tree.fold(&mut acc, &roots[3].1).unwrap();
+    tree.fold(&mut acc, &roots[2].1).unwrap();
+    roots.push(("wide", acc.close().unwrap()));
+    tree.fold(&mut acc, &roots[4].1).unwrap();
+    tree.fold(&mut acc, &roots[0].1).unwrap();
+    roots.push(("fold-dedup", acc.close().unwrap()));
+    assert_eq!(roots[4].1.claims, roots[5].1.claims);
+    for (name, root) in roots {
         let seal = tree.seal(&sealer, &root.proof).unwrap();
+        verifier.verify_claims(&root.proof, &root.claims).unwrap();
         verifier
-            .verify_claims_sealed(&root.proof, &root.claims, &roots, &seal)
+            .verify_claims_sealed(
+                &root.proof,
+                &root.claims,
+                verifier.seal_roots().unwrap(),
+                &seal,
+            )
             .unwrap();
         let path = out.join(name);
         std::fs::create_dir_all(&path).unwrap();
-        std::fs::write(path.join("root.bin"), root.proof.to_bytes()).unwrap();
-        std::fs::write(path.join("claims.bin"), root.claims.to_bytes()).unwrap();
-        std::fs::write(path.join("seal.bin"), seal.to_bytes()).unwrap();
+        for (part, bytes) in [
+            ("root", root.proof.to_bytes()),
+            ("claims", root.claims.to_bytes()),
+            ("seal", seal.to_bytes()),
+        ] {
+            std::fs::write(path.join(format!("{part}.bin")), bytes).unwrap();
+        }
         eprintln!("verified {name}");
     }
+    std::fs::write(out.join("upstream-commit"), PIN).unwrap();
 }

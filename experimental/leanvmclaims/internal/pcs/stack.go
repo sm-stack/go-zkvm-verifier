@@ -1,5 +1,5 @@
 // CREDIT: https://github.com/succinctlabs/flock (flock-core), MIT OR Apache-2.0.
-// Port of pcs/src/{stack/mod,ring_switch}.rs at da5c964831c993b011464e4fd4a573b7172d5295.
+// Port of pcs/src/{stack/mod,ring_switch}.rs at 59c25cccfd5742f8216f259f9dd4d80d9a5f66e5.
 package pcs
 
 import (

@@ -1,4 +1,4 @@
-// Derived from rec/tree/{proof,multiset}.rs at da5c964831c993b011464e4fd4a573b7172d5295.
+// Derived from rec/tree/{proof,multiset}.rs at 59c25cccfd5742f8216f259f9dd4d80d9a5f66e5.
 // Upstream MIT attribution is retained in NOTICE.
 package wire
 
@@ -21,12 +21,15 @@ type Root struct {
 	Proof   transcript.Proof
 }
 
-func DecodeRoot(data []byte) (Root, error) {
+func DecodeRoot(data []byte) (Root, error) { return DecodeRootBounded(data, -1) }
+
+// DecodeRootBounded checks the authenticated statement length before allocation.
+func DecodeRootBounded(data []byte, statementWords int) (Root, error) {
 	if len(data) < 11 || string(data[:4]) != "LVMT" {
 		return Root{}, ErrEncoding
 	}
-	if version := binary.LittleEndian.Uint16(data[4:6]); version != 20 {
-		return Root{}, fmt.Errorf("leanvmclaims: root version %d, expected 20", version)
+	if version := binary.LittleEndian.Uint16(data[4:6]); version != 21 {
+		return Root{}, fmt.Errorf("leanvmclaims: root version %d, expected 21", version)
 	}
 	rate := data[6]
 	if rate < 1 || rate > 4 {
@@ -34,7 +37,7 @@ func DecodeRoot(data []byte) (Root, error) {
 	}
 	n := uint64(binary.LittleEndian.Uint32(data[7:11]))
 	data = data[11:]
-	if n == 0 || n > uint64(len(data))/24 {
+	if n == 0 || n > uint64(len(data))/24 || (statementWords >= 0 && n != uint64(statementWords)) {
 		return Root{}, ErrEncoding
 	}
 	// Validate the rest before allocating the statement words.
@@ -75,16 +78,23 @@ type Group struct {
 type Claims []Group
 
 func DecodeClaims(data []byte) (Claims, error) {
+	return decodeClaims(data, ^uint64(0), ^uint64(0), false)
+}
+func DecodeClaimsBounded(data []byte, claimBound, groupBound uint64) (Claims, error) {
+	return decodeClaims(data, claimBound, groupBound, true)
+}
+func decodeClaims(data []byte, claimBound, groupBound uint64, canonical bool) (Claims, error) {
 	if len(data) < 4 {
 		return nil, ErrEncoding
 	}
 	ng := uint64(binary.LittleEndian.Uint32(data))
 	data = data[4:]
-	if ng > uint64(len(data))/52 {
+	if ng > groupBound || ng > uint64(len(data))/52 {
 		return nil, ErrEncoding
 	}
 	// Each allocation is bounded by bytes actually present, never the encoded count alone.
 	groups := make(Claims, 0, int(ng))
+	var total uint64
 	for i := uint64(0); i < ng; i++ {
 		if len(data) < 52 {
 			return nil, ErrEncoding
@@ -95,9 +105,10 @@ func DecodeClaims(data []byte) (Claims, error) {
 		}
 		nm := uint64(binary.LittleEndian.Uint32(data[48:52]))
 		data = data[52:]
-		if nm > uint64(len(data))/32 {
+		if nm > uint64(len(data))/32 || total >= claimBound || nm >= claimBound-total {
 			return nil, ErrEncoding
 		}
+		total += nm
 		g.Members = make([][4]uint64, int(nm))
 		for j := range g.Members {
 			for k := range g.Members[j] {
@@ -109,6 +120,11 @@ func DecodeClaims(data []byte) (Claims, error) {
 	}
 	if len(data) != 0 {
 		return nil, ErrEncoding
+	}
+	if canonical {
+		if err := groups.Check(claimBound, groupBound); err != nil {
+			return nil, err
+		}
 	}
 	return groups, nil
 }

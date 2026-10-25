@@ -11,8 +11,8 @@ import (
 	"golang.org/x/crypto/blake2s"
 )
 
-const Pin = "da5c964831c993b011464e4fd4a573b7172d5295"
-const Domain = "leanvm/mixed-class-key/v1"
+const Pin = "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5"
+const Domain = "leanvm/mixed-class-key/v2"
 
 var ErrDigest = errors.New("leanvmclaims: class-key digest mismatch")
 var ErrEncoding = errors.New("leanvmclaims: malformed class-key encoding")
@@ -34,12 +34,13 @@ type Circuit struct {
 	Columns        [102]Column
 }
 type Key struct {
-	Digest      [32]byte
-	Roots       [][32]byte
-	Placeholder [32]byte
-	Heights     [][6]uint64
-	Circuits    []Circuit
-	data        []byte
+	Digest       [32]byte
+	Roots        [][32]byte
+	Placeholders [][32]byte
+	Config       Config
+	Heights      [][6]uint64
+	Circuits     []Circuit
+	data         []byte
 }
 
 // Word returns a fixed-column word. Caller indices must be checked by the verifier.
@@ -86,56 +87,52 @@ func (r *reader) heights() (h [6]uint64) {
 	return
 }
 
-// Decode checks the trusted pin, the caller's expected descriptor and the wire
-// structure. expectedDescriptor is the canonical Rust descriptor, excluding magic
-// and including seal rate. It is not a self-authenticating trust root.
-// No columns are expanded; one owned byte copy prevents later caller mutation.
-func Decode(data []byte, pin [32]byte, expectedDescriptor []byte) (*Key, error) {
+// Decode authenticates and parses rec/tree/embed.rs class-key v2. Descriptor
+// values come from the authenticated encoding. No fixed columns are expanded.
+func Decode(data []byte, pin [32]byte) (*Key, error) {
 	data = bytes.Clone(data)
 	if Digest(data) != pin {
 		return nil, ErrDigest
 	}
 	r := reader{data: data}
-	if !bytes.Equal(r.take(8), []byte("LVMXCK01")) {
+	if !bytes.Equal(r.take(8), []byte("LVMXCK02")) {
 		return nil, ErrEncoding
 	}
-	// 4 program dimensions, 11 leaf heights, then 7 tree-shape words.
-	start := r.pos
-	var descriptor [22]uint64
-	for i := range descriptor {
-		descriptor[i] = r.word()
+	nLeaves := r.word()
+	if r.err != nil || nLeaves == 0 || nLeaves > uint64(len(data)-r.pos)/136 {
+		return nil, ErrEncoding
 	}
-	small := descriptor[21]
+	config := Config{Leaves: make([]LeafClass, int(nLeaves))}
+	for i := range config.Leaves {
+		c := &config.Leaves[i]
+		c.LogBytecode, c.LogRAM, c.LogAdvice, c.ImageWords, c.MaxMembers = r.word(), r.word(), r.word(), r.word(), r.word()
+		for j := range c.LeafHeights {
+			c.LeafHeights[j] = r.word()
+		}
+		c.LeafRate = r.word()
+	}
+	config.Arity0, config.Arity, config.TreeRate, config.Claims, config.Groups = r.word(), r.word(), r.word(), r.word(), r.word()
+	small := r.word()
 	if small > 1 {
 		return nil, ErrEncoding
 	}
-	arity := descriptor[17]
-	if descriptor[16] == 0 || arity < 2 {
-		return nil, ErrEncoding
-	}
 	if small == 1 {
-		arity = r.word()
-		claims, groups := r.word(), r.word()
-		if arity < 2 || arity > descriptor[17] || claims > descriptor[19] || groups > descriptor[20] {
-			return nil, ErrEncoding
-		}
+		config.Small = &SmallTier{r.word(), r.word(), r.word()}
 	}
-	if r.word() != 2 {
-		return nil, ErrEncoding
-	}
-	desc := data[start:r.pos]
-	if !bytes.Equal(desc, expectedDescriptor) {
+	if r.word() != 2 || config.check() != nil {
 		return nil, ErrEncoding
 	}
 	tiers := 1 + small
 	if r.word() != tiers {
 		return nil, ErrEncoding
 	}
-	k := &Key{Digest: pin, Roots: make([][32]byte, int(tiers)), Heights: make([][6]uint64, int(tiers))}
+	k := &Key{Digest: pin, Config: config, Roots: make([][32]byte, int(tiers)), Heights: make([][6]uint64, int(tiers)), Placeholders: make([][32]byte, int(nLeaves))}
 	for i := range k.Roots {
 		copy(k.Roots[i][:], r.take(32))
 	}
-	copy(k.Placeholder[:], r.take(32))
+	for i := range k.Placeholders {
+		copy(k.Placeholders[i][:], r.take(32))
+	}
 	if r.word() != tiers {
 		return nil, ErrEncoding
 	}
@@ -143,13 +140,17 @@ func Decode(data []byte, pin [32]byte, expectedDescriptor []byte) (*Key, error) 
 		k.Heights[i] = r.heights()
 	}
 	n := r.word()
-	expectedCircuits := arity
-	if small == 1 {
-		if arity > ^uint64(0)-2 {
-			return nil, ErrEncoding
-		}
-		expectedCircuits = arity + 2
+	arity := config.Arity
+	extra := uint64(0)
+	if config.Small != nil {
+		arity = config.Small.Arity
+		extra = 2
 	}
+	// Count is N + arity - 1 for one tier, N + small arity + 1 for two.
+	if arity-1 > ^uint64(0)-nLeaves-extra {
+		return nil, ErrEncoding
+	}
+	expectedCircuits := nLeaves + arity - 1 + extra
 	// Each circuit needs 8 statement bytes, 48 heights, 8 count, 102 lengths.
 	if r.err != nil || n != expectedCircuits || n > uint64(len(data)-r.pos)/880 {
 		return nil, ErrEncoding

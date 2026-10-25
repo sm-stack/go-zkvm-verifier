@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
-PIN = 'da5c964831c993b011464e4fd4a573b7172d5295'
+PIN = '59c25cccfd5742f8216f259f9dd4d80d9a5f66e5'
 
 def run(cmd, *, env=None, **kwargs):
     environment = dict(os.environ, CARGO_BUILD_JOBS='2', RAYON_NUM_THREADS='2', PWD=str(ROOT))

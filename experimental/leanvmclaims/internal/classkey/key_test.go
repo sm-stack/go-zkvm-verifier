@@ -2,7 +2,6 @@ package classkey
 
 import (
 	"bytes"
-	"encoding/binary"
 	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"os"
 	"path/filepath"
@@ -69,12 +68,11 @@ func TestRustClassKeyVectors(t *testing.T) {
 				t.Fatal("expected explicitly labelled loader-only fixture")
 			}
 			b := input(t, v)
-			desc := fixture.Hex(t, v.Descriptor)
 			pin := [32]byte(fixture.Hex(t, v.Digest))
 			if Digest(b) != pin {
 				t.Fatal("Rust/Go digest differs")
 			}
-			k, e := Decode(b, pin, desc)
+			k, e := Decode(b, pin)
 			if e != nil {
 				t.Fatal(e)
 			}
@@ -91,24 +89,24 @@ func TestRustClassKeyVectors(t *testing.T) {
 				if d != [32]byte(fixture.Hex(t, m.Digest)) {
 					t.Fatal("mutated digest", m.Name)
 				}
-				_, e := Decode(edited, d, desc)
+				_, e := Decode(edited, d)
 				if (e == nil) != m.Accept {
 					t.Fatalf("Rust/Go wire verdict differs for %s: %v", m.Name, e)
 				}
 			}
 			wrong := pin
 			wrong[0] ^= 1
-			if _, e = Decode(b, wrong, desc); e != ErrDigest {
+			if _, e = Decode(b, wrong); e != ErrDigest {
 				t.Fatal("wrong pin accepted")
 			}
 			for _, n := range []int{0, 7, 8, 183, len(b) - 1} {
 				short := b[:n]
-				if _, e = Decode(short, Digest(short), desc); e == nil {
+				if _, e = Decode(short, Digest(short)); e == nil {
 					t.Fatalf("truncation %d accepted", n)
 				}
 			}
 			extra := append(bytes.Clone(b), 0)
-			if _, e = Decode(extra, Digest(extra), desc); e == nil {
+			if _, e = Decode(extra, Digest(extra)); e == nil {
 				t.Fatal("trailing byte accepted")
 			}
 			pos := k.Circuits[0].Columns[0].Offset
@@ -123,7 +121,7 @@ func TestRustClassKeyVectors(t *testing.T) {
 	}
 }
 func FuzzClassKeyWire(f *testing.F) {
-	f.Add([]byte("LVMXCK01"))
+	f.Add([]byte("LVMXCK02"))
 	f.Add(make([]byte, 216))
 	for _, v := range vectors(f) {
 		b := input(f, v)
@@ -131,28 +129,19 @@ func FuzzClassKeyWire(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, b []byte) {
 		// Rehash so malformed inputs reach parsing instead of stopping at authentication.
-		var desc []byte
-		end := 192
-		if len(b) >= 184 && binary.LittleEndian.Uint64(b[176:184]) == 1 {
-			end = 216
-		}
-		if len(b) >= end {
-			desc = b[8:end]
-		}
-		_, _ = Decode(b, Digest(b), desc)
+		_, _ = Decode(b, Digest(b))
 	})
 }
 func BenchmarkLoadClassKey(b *testing.B) {
 	for _, v := range vectors(b) {
 		b.Run(v.Name, func(b *testing.B) {
 			data := input(b, v)
-			desc := fixture.Hex(b, v.Descriptor)
 			pin := Digest(data)
 			b.ReportAllocs()
 			b.SetBytes(int64(len(data)))
 			b.ResetTimer()
 			for range b.N {
-				if _, e := Decode(data, pin, desc); e != nil {
+				if _, e := Decode(data, pin); e != nil {
 					b.Fatal(e)
 				}
 			}

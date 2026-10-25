@@ -1,8 +1,6 @@
 //! Replay the pinned full Rust verifier on shipped genuine example roots.
-use leanvm::aggregate::{
-    Capacity, ClaimSet, ClaimShape, LeafShape, ProgramClass, Tier, Tree, TreeProof, TreeShape,
-};
-use leanvm::{PerTable, ProofTranscript, Rate, TableId};
+use leanvm::ProofTranscript;
+use leanvm::aggregate::{ClaimSet, Tree, TreeProof};
 use leanvm_mixed_reference::PIN;
 use serde_json::json;
 use std::{io::Read, path::Path};
@@ -18,59 +16,19 @@ fn main() {
     parallel::init_with_threads(std::num::NonZeroUsize::new(2).unwrap()).unwrap();
     let args: Vec<_> = std::env::args().collect();
     let base = Path::new(&args[1]);
-    let tiers = base.join("class-config.json.gz").exists();
-    let class = if tiers {
-        ProgramClass {
-            log_bytecode: 12,
-            log_ram: 4,
-            log_advice: 4,
-            image_words: 1,
-        }
-    } else {
-        ProgramClass {
-            log_bytecode: 12,
-            log_ram: 17,
-            log_advice: 13,
-            image_words: 64,
-        }
-    };
-    let hs = if tiers {
-        [4, 4, 4, 5, 5, 4, 4, 4, 4, 3, 3]
-    } else {
-        [15, 4, 4, 6, 7, 5, 4, 4, 4, 3, 3]
-    };
-    let shape = TreeShape {
-        leaf: LeafShape::plain(PerTable::from_fn(|t: TableId| hs[t.index()]), Rate::MIN).unwrap(),
-        arity_0: 2,
-        arity: 2,
-        rate: Rate::MIN,
-        claims: Some(ClaimShape {
-            capacity: Capacity {
-                claims: 8,
-                groups: 4,
-            },
-            small: if tiers {
-                Some(Tier {
-                    arity: 2,
-                    capacity: Capacity {
-                        claims: 4,
-                        groups: 2,
-                    },
-                })
-            } else {
-                None
-            },
-        }),
-    };
     let key = read(base, "class-key.bin");
     let pin = Tree::mixed_class_key_digest(&key);
-    let tree = Tree::mixed_from_bytes(class, shape, &key, &pin).unwrap();
+    let (classes, shape) = leanvm_mixed_reference::descriptor(&key);
+    let tree = Tree::mixed_classes_from_bytes(&classes, shape, &key, &pin).unwrap();
     let mut cases = vec![];
-    let names = if tiers {
-        ["first", "small-node", "wide"]
-    } else {
-        ["distinct-1", "distinct-2", "distinct-4"]
-    };
+    let names = [
+        "first",
+        "first-class1",
+        "one-member",
+        "small-node",
+        "wide",
+        "fold-dedup",
+    ];
     for (i, name) in names.iter().enumerate() {
         let bytes = read(base, &format!("{name}/root.bin"));
         let root = TreeProof::from_bytes(&bytes).unwrap();
@@ -108,7 +66,7 @@ fn main() {
         let mut s = seal.clone();
         s.narg.push(0);
         verdicts.push(json!({"action":"seal-trailing","accept":accepts(&root,&claims,&s)}));
-        let other = names[if i == 0 { 1 } else { 0 }];
+        let other = names[if i < 3 { 4 } else { 0 }];
         let s = ProofTranscript::from_bytes(&read(base, &format!("{other}/seal.bin"))).unwrap();
         verdicts.push(json!({"action":"seal-swap","accept":accepts(&root,&claims,&s)}));
         let transcript_at = 11 + 24 * words;

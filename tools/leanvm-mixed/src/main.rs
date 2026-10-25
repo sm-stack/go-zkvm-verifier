@@ -23,6 +23,7 @@ fn main() {
         log_ram: 4,
         log_advice: 4,
         image_words: 1,
+        max_members: 4,
     };
     let program = class.normalize(&program).unwrap();
     let stats = program.measure(&[]).unwrap();
@@ -58,7 +59,7 @@ fn main() {
         let roots = tree.seal_prover().unwrap().roots();
         let mut key = tree.mixed_verifier_bytes(&roots).unwrap();
         let setup_digest = Tree::mixed_class_key_digest(&key);
-        let descriptor_end = if small.is_some() { 216 } else { 192 };
+        let descriptor_end = if small.is_some() { 232 } else { 208 };
         let descriptor = key[8..descriptor_end].to_vec();
         // Compact loader-only fixtures: zero the generated column payloads, retaining
         // exact lengths/layout. These are NOT trusted circuit keys or proof fixtures.
@@ -131,7 +132,7 @@ fn main() {
                 _ => changed.image_words = value,
             }
             let mut bytes = key.clone();
-            bytes[8 + 8 * index..16 + 8 * index].copy_from_slice(&(value as u64).to_le_bytes());
+            bytes[16 + 8 * index..24 + 8 * index].copy_from_slice(&(value as u64).to_le_bytes());
             let d = Tree::mixed_class_key_digest(&bytes);
             let accepted = Tree::mixed_from_bytes(changed, shape, &bytes, &d).is_ok();
             semantic_cases.push(

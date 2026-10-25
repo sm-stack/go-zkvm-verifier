@@ -14,13 +14,6 @@ import (
 // UpstreamCommit is the exact supported mixed-tree protocol revision.
 const UpstreamCommit = classkey.Pin
 
-// ClassConfig fixes the expected program dimensions, leaf heights, rates,
-// arities and claim capacities. Obtain it independently of untrusted proof data.
-type ClassConfig = classkey.Config
-
-// SmallTier configures the optional small tier of a two-tier mixed tree.
-type SmallTier = classkey.SmallTier
-
 var ErrClass = errors.New("leanvmclaims: invalid class key or configuration")
 var ErrProof = errors.New("leanvmclaims: invalid sealed proof")
 
@@ -28,25 +21,25 @@ var ErrProof = errors.New("leanvmclaims: invalid sealed proof")
 // reuse it; simultaneous VerifySealed calls are supported. Its zero value rejects.
 type ClassVerifier struct{ class *classkey.Validated }
 
-// NewClassVerifier authenticates a canonical LVMXCK01 class key against an
-// independently trusted digest and expected class. The expected digest is
-// BLAKE2s-256("leanvm/mixed-class-key/v1" || classKey). A digest supplied alongside
-// an untrusted key is not a trust anchor. The constructor owns a copy of the key
-// and configuration; subsequent caller mutations do not affect verification.
-func NewClassVerifier(classKey []byte, expectedDigest [32]byte, expectedClass ClassConfig) (*ClassVerifier, error) {
-	k, err := classkey.Load(classKey, expectedDigest, expectedClass)
+// NewClassVerifier authenticates a canonical LVMXCK02 class key against an
+// independently trusted digest, then derives its ordered leaf classes and tree
+// configuration. The digest is BLAKE2s-256("leanvm/mixed-class-key/v2" || classKey).
+// The constructor owns a copy; later caller mutations do not affect verification.
+// Mirrors rec/tree/embed.rs::mixed_classes_from_bytes.
+func NewClassVerifier(classKey []byte, expectedDigest [32]byte) (*ClassVerifier, error) {
+	k, err := classkey.Load(classKey, expectedDigest)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrClass, err)
 	}
 	return &ClassVerifier{class: k}, nil
 }
 
-// VerifySealed verifies a version-20 mixed root, canonical claim set and v2 seal.
-// All inputs use the pinned upstream binary encodings. It verifies the complete
+// VerifySealed verifies a version-21 mixed root, canonical claim set and v2 seal.
+// Root and seal use the pinned upstream binary encodings. It verifies the complete
 // recursion proof, every carried matrix claim and each fixed-polynomial opening.
 // It does not verify leaf proofs or support same-program trees. Input slices must
 // remain unchanged until the call returns.
-func (v *ClassVerifier) VerifySealed(root, claims, seal []byte) error {
+func (v *ClassVerifier) VerifySealed(claims ClaimSet, root, seal []byte) error {
 	if v == nil || v.class == nil {
 		return ErrClass
 	}
@@ -55,12 +48,11 @@ func (v *ClassVerifier) VerifySealed(root, claims, seal []byte) error {
 	}
 	return nil
 }
-func (v *ClassVerifier) verify(rootBytes, claimBytes, sealBytes []byte) error {
-	root, err := wire.DecodeRoot(rootBytes)
-	if err != nil {
+func (v *ClassVerifier) verify(rootBytes []byte, claims ClaimSet, sealBytes []byte) error {
+	if err := claims.Check(v.class.Config.Claims, v.class.Config.Groups); err != nil {
 		return err
 	}
-	claims, err := wire.DecodeClaims(claimBytes)
+	root, err := wire.DecodeRootBounded(rootBytes, v.class.StatementWords)
 	if err != nil {
 		return err
 	}

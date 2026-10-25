@@ -22,7 +22,7 @@ func TestRustWire(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "../../testdata/wire.json", &v)
-	if v.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
+	if v.Pin != "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5" {
 		t.Fatal("stale pin")
 	}
 	for i, c := range v.Claims {

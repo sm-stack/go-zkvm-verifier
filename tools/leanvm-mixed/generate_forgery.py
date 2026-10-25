@@ -22,7 +22,7 @@ with tempfile.TemporaryDirectory(prefix='mixed-forgery-') as tmp:
     checkout(source)
     for name in ['class-key.bin','wide/root.bin','wide/claims.bin']:
         path=inputs/name;path.parent.mkdir(parents=True,exist_ok=True)
-        path.write_bytes(gzip.decompress((ROOT/'experimental/leanvmclaims/testdata/tiers'/(name+'.gz')).read_bytes()))
+        path.write_bytes(gzip.decompress((ROOT/'experimental/leanvmclaims/testdata/roots'/(name+'.gz')).read_bytes()))
     target=source/'crates/leanvm_core/src/rec/tree/mod.rs'
     code=target.read_text()
     start=code.index('pub(crate) fn assert_fake_large_wrap_refused(')
@@ -36,6 +36,10 @@ with tempfile.TemporaryDirectory(prefix='mixed-forgery-') as tmp:
     snippets=ROOT/'tools/leanvm-mixed/exporter'
     helper=helper.replace(marker,marker+'\n'+(snippets/'forgery_export.rs').read_text())
     code=code[:start]+helper+code[end:]+'\n'+(snippets/'forgery_test.rs').read_text()
+    descriptor = (ROOT/'tools/leanvm-mixed/src/lib.rs').read_text().split('pub fn descriptor',1)[1]
+    descriptor = 'fn go_port_descriptor' + descriptor
+    descriptor = descriptor.replace('leanvm::', 'crate::')
+    code += '\n' + descriptor
     target.write_text(code)
     env.update(GO_PORT_INPUT_DIR=str(inputs),GO_PORT_FORGERY_DIR=str(out))
     run(['cargo','test','--locked','--release','-j','2','-p','leanvm','--lib','go_port_export_forged_wrap','--','--test-threads=1','--nocapture'],cwd=source)

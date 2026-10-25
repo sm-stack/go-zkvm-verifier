@@ -15,7 +15,7 @@ func TestRustField(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "../../testdata/field.json", &v)
-	if v.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
+	if v.Pin != "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5" {
 		t.Fatal("stale pin")
 	}
 	elem := func(w [3]uint64) Element { return Element{C0: w[0], C1: w[1], C2: w[2]} }

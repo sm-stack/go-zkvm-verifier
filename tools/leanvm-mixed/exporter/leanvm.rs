@@ -8,7 +8,7 @@ pub fn go_port_metadata() -> String {
         .map(|t| t.spec().n_blocks_log(1))
         .collect();
     let mut out = format!(
-        "{{\"upstream_commit\":\"da5c964831c993b011464e4fd4a573b7172d5295\",\"leaf_min_heights\":{:?},\"max_log_rows\":{},\"max_mu\":{},\"min_mu\":{},\"tuple_bits\":{},\"hash_circuit\":{},\"hash_ports\":{},\"max_k_log\":{},\"circuits\":[",
+        "{{\"upstream_commit\":\"59c25cccfd5742f8216f259f9dd4d80d9a5f66e5\",\"leaf_min_heights\":{:?},\"max_log_rows\":{},\"max_mu\":{},\"min_mu\":{},\"tuple_bits\":{},\"hash_circuit\":{},\"hash_ports\":{},\"max_k_log\":{},\"circuits\":[",
         floors,
         cpu::MAX_LOG_ROWS,
         commitment::MAX_MU,

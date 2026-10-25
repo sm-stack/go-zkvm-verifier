@@ -1,5 +1,5 @@
 {
-  "upstream_commit": "da5c964831c993b011464e4fd4a573b7172d5295",
+  "upstream_commit": "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5",
   "source": "crates/leanvm_core/src/rec/tree/mod.rs::assert_fake_large_wrap_refused",
   "adjustments": [
     "large arity 3 -> design arity (2 for shipped class)",
@@ -13,23 +13,23 @@
   "files": {
     "class-key.digest": {
       "bytes": 64,
-      "sha256": "01a983e2da3cd58cd665dd019f9dcbbde15faee2c6cfe9cb98cd49511d97796d"
+      "sha256": "27a90ed6f4fdd52bbd0120c070078494df827753f6591e8f82f06ae71621c963"
     },
     "root.bin": {
-      "bytes": 257003,
-      "sha256": "ff8d6e0a6e21613a61a05ae1980b4a836dea3b53d22c8e35f4630454e1e138d5"
+      "bytes": 249035,
+      "sha256": "6517cfd3f2b67a1878af8d11e5183e56b0922d40a03da066342904e73057aa49"
     },
     "claims.bin": {
-      "bytes": 340,
-      "sha256": "b6314d0fc75488c4ac925f215c5b8ace4900c9dfc6423b720533a25c3a20bec9"
+      "bytes": 320,
+      "sha256": "2943b64c1bbe84bf329518c53c407ae025128eb27504750b7e70cb6987eafe92"
     },
     "seal.bin": {
-      "bytes": 332408,
-      "sha256": "e0ac9daddd6f07e4c89c8155f2da5cdc3d3ba4193d1faec8b1c1315cdfd7d575"
+      "bytes": 317176,
+      "sha256": "574275a5956f49c2cc34597f31ffcb8e9a875786a7bbe4645fc0146ad0a0106c"
     },
     "child-root.bin": {
-      "bytes": 256139,
-      "sha256": "47e79d19f0a061c8cd946be99eccf732c7766dc738fba2a4fc36f2c4f0c7318e"
+      "bytes": 248299,
+      "sha256": "286ac9af7f7521d2a2797a84fa79e2dd00f7c11ba4ad4718424e0b9e54632659"
     }
   }
 }

@@ -14,11 +14,9 @@ import (
 
 func recursionFixture(t *testing.T) (*classkey.Validated, func(string) wire.Root) {
 	t.Helper()
-	_, files := fixture.Load(t, "../../testdata/tiers", classkey.Pin, 12)
-	var config classkey.Config
-	fixture.JSONBytes(t, files["class-config.json"], &config)
+	_, files := fixture.Load(t, "../../testdata/roots", classkey.Pin, 20)
 	key := files["class-key.bin"]
-	k, err := classkey.Load(key, classkey.Digest(key), config)
+	k, err := classkey.Load(key, classkey.Digest(key))
 	if err != nil {
 		t.Fatal(err)
 	}

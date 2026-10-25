@@ -2,7 +2,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
@@ -27,19 +26,7 @@ func main() {
 	if e != nil || len(pin) != 32 {
 		fail(fmt.Errorf("digest must be 64 hex characters"))
 	}
-	// A wire-inspection tool can obtain its descriptor from authenticated bytes.
-	// NewClassVerifier also checks a separately supplied ClassConfig.
-	if len(b) < 192 {
-		fail(classkey.ErrEncoding)
-	}
-	end := 192
-	if binary.LittleEndian.Uint64(b[176:184]) == 1 {
-		end = 216
-	}
-	if len(b) < end {
-		fail(classkey.ErrEncoding)
-	}
-	k, e := classkey.Decode(b, [32]byte(pin), b[8:end])
+	k, e := classkey.Decode(b, [32]byte(pin))
 	if e != nil {
 		fail(e)
 	}

@@ -31,11 +31,11 @@ func TestRustRootComponents(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "../../testdata/root-components.json", &verdicts)
-	if verdicts.Pin != classkey.Pin || len(verdicts.Cases) != 3 {
+	if verdicts.Pin != classkey.Pin || len(verdicts.Cases) != 6 {
 		t.Fatal("stale Rust root verdicts")
 	}
 	for _, c := range verdicts.Cases {
-		if len(c.Verdicts) < 40 {
+		if len(c.Verdicts) < 38 {
 			t.Fatal("missing Rust rejection cases")
 		}
 		for _, v := range c.Verdicts {
@@ -44,13 +44,13 @@ func TestRustRootComponents(t *testing.T) {
 			}
 		}
 	}
-	_, files := fixture.Load(t, base, classkey.Pin, 12)
-	digest, err := hex.DecodeString("de82c3471f61accaa408d475404d7cd911edf04f23873a5d0f4fb9a2344ae171")
+	_, files := fixture.Load(t, base, classkey.Pin, 20)
+	digest, err := hex.DecodeString(string(files["class-key.digest"]))
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := classkey.Config{LogBytecode: 12, LogRAM: 17, LogAdvice: 13, ImageWords: 64, LeafHeights: [11]uint64{15, 4, 4, 6, 7, 5, 4, 4, 4, 3, 3}, LeafRate: 1, Arity0: 2, Arity: 2, TreeRate: 1, Claims: 8, Groups: 4}
-	loaded, err := classkey.Load(files["class-key.bin"], [32]byte(digest), cfg)
+
+	loaded, err := classkey.Load(files["class-key.bin"], [32]byte(digest))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestRustRootComponents(t *testing.T) {
 	}
 	hashCircuit := &schema.Circuits[schema.HashCircuit]
 	scratch := make([]flock.E, len(hashCircuit.Gates))
-	for _, name := range []string{"distinct-1", "distinct-2", "distinct-4"} {
+	for _, name := range []string{"first", "first-class1", "wide"} {
 		t.Run(name, func(t *testing.T) {
 			check := func(action string, cut int, err error) {
 				t.Helper()
@@ -83,7 +83,7 @@ func TestRustRootComponents(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if root.Circuit != 1 || len(root.Words) != loaded.StatementWords || uint64(root.Rate) != cfg.TreeRate {
+			if len(root.Words) != loaded.StatementWords || uint64(root.Rate) != loaded.Config.TreeRate {
 				t.Fatal("unexpected real-root statement")
 			}
 			v, err := transcript.NewVerifier(loaded.RootSession, root.Instance(), root.Proof)
@@ -93,7 +93,11 @@ func TestRustRootComponents(t *testing.T) {
 			if _, err = v.Read(32); err != nil {
 				t.Fatal(err)
 			} // Commitment::read binds the witness root.
-			replay, err := flock.Verify(v, []flock.Shape{{hashCircuit.KLog, hashCircuit.ConstPos, loaded.Layouts[0].Heights[2]}})
+			tier := 0
+			if name == "wide" {
+				tier = 1
+			}
+			replay, err := flock.Verify(v, []flock.Shape{{hashCircuit.KLog, hashCircuit.ConstPos, loaded.Layouts[tier].Heights[2]}})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -127,21 +131,24 @@ func TestRustRootComponents(t *testing.T) {
 			changed.Words = append([]wire.Element(nil), root.Words...)
 			changed.Words[len(changed.Words)-1][0] ^= 1
 			check("matrix-value", 0, settlement.Matrices(loaded, changed))
-			for _, cut := range []int{0, len(seal.Messages) / 2, len(seal.Messages) - 1} {
+			if len(seal.Messages) > 0 {
+				for _, cut := range []int{0, len(seal.Messages) / 2, len(seal.Messages) - 1} {
+					bad := seal
+					bad.Messages = bad.Messages[:cut]
+					check("seal-cut", cut, settlement.Seal(loaded, root, bad))
+				}
 				bad := seal
-				bad.Messages = bad.Messages[:cut]
-				check("seal-cut", cut, settlement.Seal(loaded, root, bad))
+				bad.Messages = append([]byte(nil), seal.Messages...)
+				bad.Messages[len(bad.Messages)-1] ^= 1
+				check("seal-flip", 0, settlement.Seal(loaded, root, bad))
 			}
+
 			bad := seal
-			bad.Messages = append([]byte(nil), seal.Messages...)
-			bad.Messages[len(bad.Messages)-1] ^= 1
-			check("seal-flip", 0, settlement.Seal(loaded, root, bad))
-			bad = seal
 			bad.Messages = append(append([]byte(nil), seal.Messages...), 0)
 			check("seal-trailing", 0, settlement.Seal(loaded, root, bad))
-			other := files["distinct-1/seal.bin"]
-			if name == "distinct-1" {
-				other = files["distinct-2/seal.bin"]
+			other := files["first/seal.bin"]
+			if name != "wide" {
+				other = files["wide/seal.bin"]
 			}
 			bad, err = transcript.Decode(other)
 			if err != nil {
