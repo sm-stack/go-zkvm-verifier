@@ -2,8 +2,8 @@ package flock
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"os"
+	"errors"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"reflect"
 	"testing"
 
@@ -33,13 +33,7 @@ func loadVectors(t testing.TB) ([32]byte, []caseVector) {
 		Phi     [][3]uint64
 		Cases   []caseVector
 	}
-	b, err := os.ReadFile("../../testdata/flock.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &v); err != nil {
-		t.Fatal(err)
-	}
+	fixture.JSON(t, "../../testdata/flock.json", &v)
 	if v.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" || len(v.Cases) != 3 || len(v.Phi) != 256 {
 		t.Fatal("stale or incomplete flock vectors")
 	}
@@ -48,7 +42,7 @@ func loadVectors(t testing.TB) ([32]byte, []caseVector) {
 			t.Fatalf("phi8[%d] differs", i)
 		}
 	}
-	b, err = hex.DecodeString(v.Session)
+	b, err := hex.DecodeString(v.Session)
 	if err != nil || len(b) != 32 {
 		t.Fatal("bad session")
 	}
@@ -156,13 +150,7 @@ func TestRustMatrixClaims(t *testing.T) {
 			}
 		}
 	}
-	b, err := os.ReadFile("../../testdata/matrices.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &v); err != nil {
-		t.Fatal(err)
-	}
+	fixture.JSON(t, "../../testdata/matrices.json", &v)
 	s, err := machine.Load()
 	if err != nil {
 		t.Fatal(err)
@@ -187,5 +175,26 @@ func TestRustMatrixClaims(t *testing.T) {
 				t.Fatal("accepted false matrix claim")
 			}
 		}
+	}
+}
+
+func TestZerocheckTerminalBinding(t *testing.T) {
+	// Zero round polynomials leave a zero claim. The terminal (a,b,c)=(0,0,1)
+	// violates a*b+c=0. No lincheck payload follows: its truncation must not be
+	// mistaken for rejection by the zerocheck terminal constraint.
+	shape := Shape{KLog: skipLog, Pin: 0, LogInstances: len(fixedChallenges)}
+	var messages fixture.Messages
+	messages.Zeros(skipSize) // Values of the skip-round polynomial.
+	for range len(fixedChallenges) {
+		messages.Elements(E{}, E{}) // Two transmitted quadratic coefficients.
+	}
+	messages.Elements(E{}, E{}, one) // Terminal a, b, c.
+	v, err := transcript.NewVerifier([32]byte{}, []byte{1}, transcript.Proof{Messages: messages})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Verify(v, []Shape{shape})
+	if !errors.Is(err, ErrZerocheckTerminal) {
+		t.Fatalf("wanted terminal rejection, got %v", err)
 	}
 }

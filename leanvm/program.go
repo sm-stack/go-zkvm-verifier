@@ -424,7 +424,8 @@ func newProgram(g *guest) (*program, error) {
 		return nil, errNotProgram
 	}
 	blocks := fillBlocks()
-	// filler::text_fits: room for the illegal word, the blocks and the pad.
+	// filler::text_fits bounds the extended text including its two padding entries.
+	// Appending preserves the already-validated entry PC and memory dimensions.
 	if nextPow2(uint64(len(g.text))+uint64(len(blocks))+3) > 1<<maxLogText {
 		return nil, errNotProgram
 	}
@@ -432,9 +433,6 @@ func newProgram(g *guest) (*program, error) {
 	text = append(text, g.text...)
 	text = append(text, 0)
 	text = append(text, blocks...)
-	if !validateProgram(len(text), g.entryPC, len(g.image), g.logRAM, g.logAdvice) {
-		return nil, errNotProgram
-	}
 
 	p := &program{
 		entryCount: int(nextPow2(uint64(len(text)) + 2)),

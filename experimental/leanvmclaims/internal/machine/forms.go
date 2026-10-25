@@ -21,12 +21,12 @@ type RecTable struct {
 
 func validateTables(tables []RecTable) error {
 	if len(tables) != 5 {
-		return errors.New("mixed: missing recursion table metadata")
+		return errors.New("leanvmclaims: missing recursion table metadata")
 	}
 	slots := [5]int{4, 4, 16, 65, 8}
 	for i, t := range tables {
 		if t.Columns != ownedColumns[i] || len(t.Slots) != slots[i] {
-			return errors.New("mixed: invalid recursion table shape")
+			return errors.New("leanvmclaims: invalid recursion table shape")
 		}
 		forms := append([]Form(nil), t.Identities...)
 		for _, slot := range t.Slots {
@@ -34,11 +34,11 @@ func validateTables(tables []RecTable) error {
 		}
 		for _, f := range forms {
 			if len(f.Coeffs) != t.Columns {
-				return errors.New("mixed: invalid recursion coefficients")
+				return errors.New("leanvmclaims: invalid recursion coefficients")
 			}
 			for _, p := range f.Prods {
 				if p.A < 0 || p.A >= t.Columns || p.B < 0 || p.B >= t.Columns {
-					return errors.New("mixed: invalid recursion product")
+					return errors.New("leanvmclaims: invalid recursion product")
 				}
 			}
 		}

@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/blake2s"
 )
 
-var ErrClass = errors.New("mixed: invalid class or inconsistent verifier data")
+var ErrClass = errors.New("leanvmclaims: invalid class or inconsistent verifier data")
 
 // Config is the expected relation, supplied independently of the class key.
 // All sizes are protocol integers, not host-sized allocation requests.
@@ -54,7 +54,6 @@ type Validated struct {
 	Key                                         *Key
 	Config                                      Config
 	Layouts                                     []*machine.Layout
-	LeafMu                                      int
 	DenseVars                                   [4]int
 	DensePointVars, Polynomials, StatementWords int
 	TierShift                                   int
@@ -76,7 +75,7 @@ func Load(data []byte, pin [32]byte, config Config) (*Validated, error) {
 	if config.LogBytecode < uint64(s.MinBytecode) || config.LogBytecode > uint64(s.MaxMu-s.TupleBits) || config.LogRAM > 27 || config.LogAdvice > 26 || config.ImageWords == 0 || config.ImageWords&(config.ImageWords-1) != 0 || config.ImageWords > uint64(1)<<config.LogRAM {
 		return nil, ErrClass
 	}
-	mu, err := s.LeafSize(config.LogBytecode, config.LogRAM, config.LogAdvice, config.LeafHeights)
+	_, err = s.LeafSize(config.LogBytecode, config.LogRAM, config.LogAdvice, config.LeafHeights)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func Load(data []byte, pin [32]byte, config Config) (*Validated, error) {
 		small := *config.Small
 		config.Small = &small
 	}
-	v := &Validated{Key: k, Config: config, LeafMu: mu, Polynomials: 2 + len(k.Heights)}
+	v := &Validated{Key: k, Config: config, Polynomials: 2 + len(k.Heights)}
 	for _, h := range k.Heights {
 		l, err := machine.NewLayout(h)
 		if err != nil {

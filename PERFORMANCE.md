@@ -7,9 +7,9 @@ Allocated bytes are per operation, not peak RSS.
 
 | Operation / fixture | Median | Batch range | Bytes/op | Allocs/op |
 | --- | ---: | ---: | ---: | ---: |
-| leanVM Fibonacci n=1000 | 4.455 ms | 4.413–5.103 ms | 4,185,776 | 4,323 |
-| leanVM preimage, 40,000 bytes | 4.406 ms | 4.355–4.840 ms | 3,950,168 | 3,879 |
-| SP1 Fibonacci n=1000000 | 25.586 ms | 24.428–26.932 ms | ~2,017,133 | 1,476 |
+| leanVM Fibonacci n=1000 | 4.508 ms | 4.408–5.094 ms | 4,171,544 | 4,072 |
+| leanVM preimage, 40,000 bytes | 4.363 ms | 4.314–4.497 ms | 3,928,568 | 3,522 |
+| SP1 Fibonacci n=1000000 | 25.134 ms | 24.849–26.835 ms | 2,017,133 | 1,476 |
 
 Fixture loading and decompression are excluded. Each verification decodes its
 proof; leanVM also loads the ELF and computes its program digest. Circuit
@@ -18,7 +18,7 @@ is reported.
 
 ## Runtime backends
 
-- leanVM uses arm64 PMULL when supported, with runtime CPU detection. `purego`
+- Both leanVM verifiers use shared arm64 PMULL when supported, with runtime CPU detection. `purego`
   and other architectures use the portable field implementation.
 - Bytecode digesting streams slot-major words through a 4 KiB buffer. Evaluation
   uses a shared 256-element field buffer and logarithmic recursion depth.
@@ -57,10 +57,11 @@ copy of the key; verification reuses the loaded class. Fixture I/O is excluded.
 
 | Operation | Median | Batch range | Bytes/op | Allocs/op |
 | --- | ---: | ---: | ---: | ---: |
-| Load authenticated class | 28.989 ms | 28.835–29.431 ms | 25,316,784 | 50 |
-| Verify sealed claim-tree root | 58.148 ms | 57.510–59.644 ms | 13,732,160 | 2,768 |
+| Load authenticated class | 28.946 ms | 28.848–30.785 ms | 25,315,632 | 49 |
+| Verify sealed claim-tree root | 20.470 ms | 20.308–20.702 ms | 13,732,160 | 2,768 |
 
-The experimental package uses portable scalar field arithmetic.
+The experimental package uses the same `internal/gf2` PMULL dispatch and
+portable fallback as standalone leanVM.
 
 ```sh
 CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \

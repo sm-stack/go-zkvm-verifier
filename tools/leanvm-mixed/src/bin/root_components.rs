@@ -3,6 +3,7 @@ use leanvm::aggregate::{
     Capacity, ClaimSet, ClaimShape, LeafShape, ProgramClass, Tier, Tree, TreeProof, TreeShape,
 };
 use leanvm::{PerTable, ProofTranscript, Rate, TableId};
+use leanvm_mixed_reference::PIN;
 use serde_json::json;
 use std::{io::Read, path::Path};
 fn read(base: &Path, name: &str) -> Vec<u8> {
@@ -150,10 +151,7 @@ fn main() {
     }
     std::fs::write(
         &args[2],
-        serde_json::to_vec(
-            &json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","cases":cases}),
-        )
-        .unwrap(),
+        serde_json::to_vec(&json!({"upstream_commit":PIN,"cases":cases})).unwrap(),
     )
     .unwrap();
 }

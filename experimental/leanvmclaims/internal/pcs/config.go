@@ -12,7 +12,7 @@ type config struct {
 func configFor(logN, rate int) (config, error) {
 	c, ok := profiles[[2]int{logN, rate}]
 	if !ok {
-		return config{}, errors.New("mixed: unsupported PCS size or rate")
+		return config{}, errors.New("leanvmclaims: unsupported PCS size or rate")
 	}
 	return c, nil
 }

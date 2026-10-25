@@ -1,9 +1,7 @@
 //! Wire/claim-digest vectors, not valid recursive proofs.
 use leanvm::aggregate::{Capacity, ClaimGroup, ClaimSet, TreeProof};
+use leanvm_mixed_reference::{PIN, hex};
 use serde_json::json;
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
-}
 fn main() {
     let out = std::env::args().nth(1).expect("output file");
     let a = ClaimGroup {
@@ -54,5 +52,11 @@ fn main() {
             }
         }
     }
-    std::fs::write(out,serde_json::to_string_pretty(&json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","claims":cases,"roots":roots})).unwrap()+"\n").unwrap();
+    std::fs::write(
+        out,
+        serde_json::to_string_pretty(&json!({"upstream_commit":PIN,"claims":cases,"roots":roots}))
+            .unwrap()
+            + "\n",
+    )
+    .unwrap();
 }

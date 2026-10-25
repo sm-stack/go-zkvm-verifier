@@ -18,7 +18,7 @@ import (
 
 type E = field.Element
 
-var ErrStatement = errors.New("mixed: invalid root statement or unsettled claim")
+var ErrStatement = errors.New("leanvmclaims: invalid root statement or unsettled claim")
 
 func Position(k *classkey.Validated, root wire.Root) (int, error) {
 	if len(root.Words) != k.StatementWords || uint64(root.Rate) != k.Config.TreeRate {
@@ -52,20 +52,6 @@ func elements(words []wire.Element) []E {
 	}
 	return out
 }
-func eqTable(p []E) []E {
-	out := make([]E, 1, 1<<uint(len(p)))
-	out[0] = field.One
-	for _, x := range p {
-		n := len(out)
-		out = out[:2*n]
-		for i := 0; i < n; i++ {
-			hi := out[i].Mul(x)
-			out[n+i] = hi
-			out[i] = out[i].Add(hi)
-		}
-	}
-	return out
-}
 
 // Matrices checks every carried circuit matrix against the pinned gate lists.
 func Matrices(k *classkey.Validated, root wire.Root) error {
@@ -88,7 +74,7 @@ func Matrices(k *classkey.Validated, root wire.Root) error {
 	}
 	scratch := make([]E, maxGates)
 	for i, c := range s.Circuits {
-		r, w := eqTable(rows[:c.KLog]), eqTable(cols[:c.KLog])
+		r, w := field.EqTable(rows[:c.KLog]), field.EqTable(cols[:c.KLog])
 		row, col := func(i int) E { return r[i] }, func(i int) E { return w[i] }
 		a, err := c.Bilinear(E{}, row, col, scratch)
 		if err != nil {

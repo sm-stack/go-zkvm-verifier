@@ -3,8 +3,10 @@ package transcript
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
-	"os"
+	"errors"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
+	"golang.org/x/crypto/blake2s"
+	"math/bits"
 	"testing"
 )
 
@@ -19,24 +21,10 @@ type vectors struct {
 	}
 }
 
-func unhex(t *testing.T, s string) []byte {
-	t.Helper()
-	b, e := hex.DecodeString(s)
-	if e != nil {
-		t.Fatal(e)
-	}
-	return b
-}
 func loadVectors(t *testing.T) vectors {
 	t.Helper()
-	b, e := os.ReadFile("../../testdata/transcript.json")
-	if e != nil {
-		t.Fatal(e)
-	}
 	var v vectors
-	if e = json.Unmarshal(b, &v); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/transcript.json", &v)
 	if v.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
 		t.Fatal("stale upstream pin")
 	}
@@ -44,11 +32,11 @@ func loadVectors(t *testing.T) vectors {
 }
 func TestRustTranscript(t *testing.T) {
 	v := loadVectors(t)
-	session := Session([]byte("leanvm/mixed-tree-seal/v2"), unhex(t, v.Relation))
+	session := Session([]byte("leanvm/mixed-tree-seal/v2"), fixture.Hex(t, v.Relation))
 	if hex.EncodeToString(session[:]) != v.Session {
 		t.Fatal("Rust session mismatch")
 	}
-	proof, e := Decode(unhex(t, v.Proof))
+	proof, e := Decode(fixture.Hex(t, v.Proof))
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -101,16 +89,16 @@ func TestRustTranscript(t *testing.T) {
 		t.Fatal(e)
 	}
 	for i, c := range v.Framing {
-		_, e := Decode(unhex(t, c.Bytes))
+		_, e := Decode(fixture.Hex(t, c.Bytes))
 		if (e == nil) != c.Accept {
 			t.Fatalf("Rust framing case %d differs: %v", i, e)
 		}
 	}
 	for i, c := range v.Duplex {
 		var iv [32]byte
-		copy(iv[:], unhex(t, v.Relation))
+		copy(iv[:], fixture.Hex(t, v.Relation))
 		d := New(iv)
-		d.Absorb(unhex(t, c.Input))
+		d.Absorb(fixture.Hex(t, c.Input))
 		for j, want := range []string{c.First, c.Second} {
 			if j == 1 {
 				d.Absorb([]byte("next"))
@@ -177,4 +165,45 @@ func FuzzDecode(f *testing.F) {
 			t.Fatal(e)
 		}
 	})
+}
+
+func TestPOWBinding(t *testing.T) {
+	// Select both a valid and invalid nonce using a separate hash calculation.
+	const difficulty = 8
+	var iv [32]byte
+	d := New(iv)
+	d.Absorb([]byte{1})
+	var block [64]byte
+	if err := d.Squeeze(block[:32]); err != nil {
+		t.Fatal(err)
+	}
+	copy(block[56:], "FS-POW-1")
+	found := [2]bool{}
+	for nonce := uint64(0); !found[0] || !found[1]; nonce++ {
+		binary.LittleEndian.PutUint64(block[32:40], nonce)
+		hash := blake2s.Sum256(block[:])
+		valid := bits.LeadingZeros64(binary.LittleEndian.Uint64(hash[:8])) >= difficulty
+		index := 0
+		if valid {
+			index = 1
+		}
+		if found[index] {
+			continue
+		}
+		found[index] = true
+		v, err := NewVerifier(iv, []byte{1}, Proof{Messages: append([]byte(nil), block[32:40]...)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = v.CheckPOW(difficulty)
+		if valid {
+			if err != nil || v.EOF() != nil {
+				t.Fatalf("valid nonce: %v", err)
+			}
+		} else {
+			if !errors.Is(err, ErrPOW) || !errors.Is(v.EOF(), ErrPOW) {
+				t.Fatalf("invalid nonce: %v", err)
+			}
+		}
+	}
 }

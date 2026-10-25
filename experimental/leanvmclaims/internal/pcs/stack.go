@@ -41,7 +41,7 @@ func (p PointClaim) valid(committed uint64) bool {
 }
 func (p PointClaim) at(x []E) E {
 	s, n := p.StrideLog, p.StrideLog+len(p.Point)
-	return eqBits(p.Slot, x[:s]).Mul(eq(p.Point, x[s:n])).Mul(eqBits(p.Offset>>uint(n), x[n:]))
+	return field.EqBits(p.Slot, x[:s]).Mul(field.Eq(p.Point, x[s:n])).Mul(field.EqBits(p.Offset>>uint(n), x[n:]))
 }
 func inverseLadder(v E, lowest int) [64]E {
 	var out [64]E
@@ -138,7 +138,7 @@ func (f ringFamily) at(rings []RingClaim, x []E) E {
 			}
 			scale = scale.Mul(f.gamma)
 		}
-		weight = weight.Add(closeTerms(sum).Mul(eqBits(ring.Offset>>uint(ring.Vars), x[ring.Vars:])))
+		weight = weight.Add(closeTerms(sum).Mul(field.EqBits(ring.Offset>>uint(ring.Vars), x[ring.Vars:])))
 	}
 	return weight
 }

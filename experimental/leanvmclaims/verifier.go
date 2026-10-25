@@ -36,7 +36,7 @@ type ClassVerifier struct{ class *classkey.Validated }
 func NewClassVerifier(classKey []byte, expectedDigest [32]byte, expectedClass ClassConfig) (*ClassVerifier, error) {
 	k, err := classkey.Load(classKey, expectedDigest, expectedClass)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrClass, err)
+		return nil, fmt.Errorf("%w: %w", ErrClass, err)
 	}
 	return &ClassVerifier{class: k}, nil
 }
@@ -51,7 +51,7 @@ func (v *ClassVerifier) VerifySealed(root, claims, seal []byte) error {
 		return ErrClass
 	}
 	if err := v.verify(root, claims, seal); err != nil {
-		return fmt.Errorf("%w: %v", ErrProof, err)
+		return fmt.Errorf("%w: %w", ErrProof, err)
 	}
 	return nil
 }

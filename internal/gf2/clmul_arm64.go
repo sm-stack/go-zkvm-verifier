@@ -1,6 +1,6 @@
 //go:build arm64 && !purego
 
-package leanvm
+package gf2
 
 import "golang.org/x/sys/cpu"
 
@@ -9,18 +9,18 @@ import "golang.org/x/sys/cpu"
 // can exercise the fallback; -tags purego excludes this package's assembly.
 var hasPMULL = cpu.ARM64.HasPMULL
 
-func kmul(a, b uint64) uint64 {
+func Mul64(a, b uint64) uint64 {
 	if hasPMULL {
 		return kmulPMULL(a, b)
 	}
-	return kmulSoftware(a, b)
+	return Mul64Software(a, b)
 }
-func (a ext) mul(b ext) ext {
+func Mul192(a, b Element) Element {
 	if hasPMULL {
-		c0, c1, c2 := extMulPMULL(a.c0, a.c1, a.c2, b.c0, b.c1, b.c2)
-		return ext{c0, c1, c2}
+		c0, c1, c2 := extMulPMULL(a.C0, a.C1, a.C2, b.C0, b.C1, b.C2)
+		return Element{c0, c1, c2}
 	}
-	return a.mulSoftware(b)
+	return Mul192Software(a, b)
 }
 
 //go:noescape

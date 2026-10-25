@@ -1,0 +1,394 @@
+{
+  "circuit_tables": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "circuits": [
+    {
+      "const_pos": 512,
+      "gate_count": 1929,
+      "gate_kinds": {
+        "0": 336,
+        "1": 978,
+        "2": 551,
+        "3": 64
+      },
+      "gates_sha256": "15afe0eeb9aa408377bd77b621b8d926f23a14cffca2f45fcf4096558a861769",
+      "index": 0,
+      "input_words": 6,
+      "k_log": 10,
+      "useful_bits": 1000
+    },
+    {
+      "const_pos": 384,
+      "gate_count": 1177,
+      "gate_kinds": {
+        "0": 196,
+        "1": 601,
+        "2": 253,
+        "3": 127
+      },
+      "gates_sha256": "d212ace7366455fd2ccf6f3f7a844d88446cd1725622a027f1dd5e42d0dc04cf",
+      "index": 1,
+      "input_words": 4,
+      "k_log": 10,
+      "useful_bits": 638
+    },
+    {
+      "const_pos": 448,
+      "gate_count": 1287,
+      "gate_kinds": {
+        "0": 259,
+        "1": 592,
+        "2": 309,
+        "3": 127
+      },
+      "gates_sha256": "b357faef51682c20f31ea948ef27b50889cc7555a0610547626ccd7a88404175",
+      "index": 2,
+      "input_words": 5,
+      "k_log": 10,
+      "useful_bits": 758
+    },
+    {
+      "const_pos": 192,
+      "gate_count": 508,
+      "gate_kinds": {
+        "0": 129,
+        "1": 252,
+        "2": 63,
+        "3": 64
+      },
+      "gates_sha256": "fc163948e316ffdc42e2118f858d0ae802c14c7ace3bedc62bcb3e1eb94237b8",
+      "index": 3,
+      "input_words": 2,
+      "k_log": 8,
+      "useful_bits": 256
+    },
+    {
+      "const_pos": 192,
+      "gate_count": 508,
+      "gate_kinds": {
+        "0": 129,
+        "1": 252,
+        "2": 63,
+        "3": 64
+      },
+      "gates_sha256": "fc163948e316ffdc42e2118f858d0ae802c14c7ace3bedc62bcb3e1eb94237b8",
+      "index": 4,
+      "input_words": 2,
+      "k_log": 8,
+      "useful_bits": 256
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 1998,
+      "gate_kinds": {
+        "0": 196,
+        "1": 1159,
+        "2": 579,
+        "3": 64
+      },
+      "gates_sha256": "7837eb65fb652f3a3561b436816a80f6e38dae5fcdcd96d592ca352615726499",
+      "index": 5,
+      "input_words": 4,
+      "k_log": 10,
+      "useful_bits": 900
+    },
+    {
+      "const_pos": 256,
+      "gate_count": 13274,
+      "gate_kinds": {
+        "0": 130,
+        "1": 10905,
+        "2": 2175,
+        "3": 64
+      },
+      "gates_sha256": "4e9d094a2799532d16ad4446a4ba10fa4934a166200b0c820bead03f7fabd083",
+      "index": 6,
+      "input_words": 3,
+      "k_log": 12,
+      "useful_bits": 2432
+    },
+    {
+      "const_pos": 256,
+      "gate_count": 26621,
+      "gate_kinds": {
+        "0": 131,
+        "1": 21881,
+        "2": 4545,
+        "3": 64
+      },
+      "gates_sha256": "fbe1b6c06c82014776ccb5b39318ab1454199e27edbd99bcb3e9b2e64828f368",
+      "index": 7,
+      "input_words": 3,
+      "k_log": 13,
+      "useful_bits": 4802
+    },
+    {
+      "const_pos": 448,
+      "gate_count": 29088,
+      "gate_kinds": {
+        "0": 260,
+        "1": 23607,
+        "2": 5156,
+        "3": 65
+      },
+      "gates_sha256": "d6de6b6677a60d5f327607687732b1d60fa058862277db8dcfa75b0e540c8376",
+      "index": 8,
+      "input_words": 5,
+      "k_log": 13,
+      "useful_bits": 5605
+    },
+    {
+      "const_pos": 1152,
+      "gate_count": 86241,
+      "gate_kinds": {
+        "0": 865,
+        "1": 70242,
+        "2": 14878,
+        "3": 256
+      },
+      "gates_sha256": "3eca6b343892218275d4e6420d451d3751bed3109250abb756ec4195d75882e5",
+      "index": 9,
+      "input_words": 14,
+      "k_log": 14,
+      "useful_bits": 16031
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 760,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 154,
+        "3": 2
+      },
+      "gates_sha256": "b302fb429ed872388c0a3801f0db180724cadb1bcc8fd741d698664d919fd402",
+      "index": 10,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 440
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 759,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 153,
+        "3": 2
+      },
+      "gates_sha256": "eac6185d96b572bcfd84e0e1f5b5dbce1a0dec2b4a0a329fb0d6453970a184c3",
+      "index": 11,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 439
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 757,
+      "gate_kinds": {
+        "0": 160,
+        "1": 442,
+        "2": 153,
+        "3": 2
+      },
+      "gates_sha256": "bedd62fb53fc5ceade739c3ee27a26373b3cd772d0974cedfc0c56e114624886",
+      "index": 12,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 439
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 759,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 153,
+        "3": 2
+      },
+      "gates_sha256": "eac6185d96b572bcfd84e0e1f5b5dbce1a0dec2b4a0a329fb0d6453970a184c3",
+      "index": 13,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 439
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 757,
+      "gate_kinds": {
+        "0": 160,
+        "1": 442,
+        "2": 153,
+        "3": 2
+      },
+      "gates_sha256": "bedd62fb53fc5ceade739c3ee27a26373b3cd772d0974cedfc0c56e114624886",
+      "index": 14,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 439
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 760,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 154,
+        "3": 2
+      },
+      "gates_sha256": "b302fb429ed872388c0a3801f0db180724cadb1bcc8fd741d698664d919fd402",
+      "index": 15,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 440
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 760,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 154,
+        "3": 2
+      },
+      "gates_sha256": "b302fb429ed872388c0a3801f0db180724cadb1bcc8fd741d698664d919fd402",
+      "index": 16,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 440
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 760,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 154,
+        "3": 2
+      },
+      "gates_sha256": "b302fb429ed872388c0a3801f0db180724cadb1bcc8fd741d698664d919fd402",
+      "index": 17,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 440
+    },
+    {
+      "const_pos": 320,
+      "gate_count": 760,
+      "gate_kinds": {
+        "0": 160,
+        "1": 444,
+        "2": 154,
+        "3": 2
+      },
+      "gates_sha256": "b302fb429ed872388c0a3801f0db180724cadb1bcc8fd741d698664d919fd402",
+      "index": 18,
+      "input_words": 4,
+      "k_log": 9,
+      "useful_bits": 440
+    },
+    {
+      "const_pos": 1280,
+      "gate_count": 4229,
+      "gate_kinds": {
+        "0": 775,
+        "1": 2698,
+        "2": 754,
+        "3": 2
+      },
+      "gates_sha256": "a5ab028ecc43d8e28f88afa0d9e6147c2fbcbe5e28440f33c6eb4859e3e145d3",
+      "index": 19,
+      "input_words": 19,
+      "k_log": 11,
+      "useful_bits": 2000
+    },
+    {
+      "const_pos": 1664,
+      "gate_count": 4134,
+      "gate_kinds": {
+        "0": 723,
+        "1": 2158,
+        "2": 993,
+        "3": 260
+      },
+      "gates_sha256": "7e397a9e103f89bcf492a7a723ee2ee4b38836c0261bafbb949048f4619189fc",
+      "index": 20,
+      "input_words": 17,
+      "k_log": 12,
+      "useful_bits": 2495
+    }
+  ],
+  "hash_circuit": 9,
+  "hash_ports": 18,
+  "initial_k": 6,
+  "leaf_columns": [
+    3,
+    3,
+    2,
+    4,
+    4,
+    3,
+    3,
+    3,
+    3,
+    7,
+    14
+  ],
+  "leaf_min_heights": [
+    4,
+    4,
+    4,
+    5,
+    5,
+    4,
+    4,
+    4,
+    4,
+    3,
+    3
+  ],
+  "max_k_log": 14,
+  "max_log_rows": 32,
+  "max_mu": 28,
+  "min_bytecode": 12,
+  "min_cube_log": 13,
+  "min_mu": 15,
+  "rec_tables_sha256": "9df0fee45d9ed4649908f09bd5df6cd48b07e9b982ba13174109eb7bcec40e04",
+  "register_bits": [
+    16,
+    11,
+    10,
+    11,
+    10,
+    16,
+    16,
+    16,
+    16,
+    10,
+    15
+  ],
+  "register_log": 6,
+  "tuple_bits": 4,
+  "upstream_commit": "da5c964831c993b011464e4fd4a573b7172d5295"
+}

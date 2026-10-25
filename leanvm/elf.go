@@ -276,9 +276,6 @@ func loadGuestOK(elf []byte) (*guest, bool) {
 	for i := range g.image {
 		g.image[i] = binary.LittleEndian.Uint64(image[8*i:])
 	}
-	if logRAM > maxLogRAM || uint64(len(g.image)) > uint64(1)<<logRAM {
-		return nil, false
-	}
 	return g, true
 }
 

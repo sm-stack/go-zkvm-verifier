@@ -1,13 +1,8 @@
 package flock_test
 
 import (
-	"compress/gzip"
-	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
-	"io"
-	"os"
-	"path/filepath"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/classkey"
@@ -35,13 +30,7 @@ func TestRustRootComponents(t *testing.T) {
 			}
 		}
 	}
-	vb, err := os.ReadFile("../../testdata/root-components.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(vb, &verdicts); err != nil {
-		t.Fatal(err)
-	}
+	fixture.JSON(t, "../../testdata/root-components.json", &verdicts)
 	if verdicts.Pin != classkey.Pin || len(verdicts.Cases) != 3 {
 		t.Fatal("stale Rust root verdicts")
 	}
@@ -55,46 +44,7 @@ func TestRustRootComponents(t *testing.T) {
 			}
 		}
 	}
-	var manifest struct {
-		Pin   string `json:"upstream_commit"`
-		Files map[string]struct {
-			Bytes int
-			Hash  string `json:"sha256"`
-		}
-	}
-	b, err := os.ReadFile(filepath.Join(base, "provenance.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &manifest); err != nil {
-		t.Fatal(err)
-	}
-	if manifest.Pin != classkey.Pin || len(manifest.Files) != 12 {
-		t.Fatal("wrong root fixture provenance")
-	}
-	files := make(map[string][]byte)
-	for name, entry := range manifest.Files {
-		f, err := os.Open(filepath.Join(base, name+".gz"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		gz, err := gzip.NewReader(f)
-		if err != nil {
-			f.Close()
-			t.Fatal(err)
-		}
-		raw, err := io.ReadAll(io.LimitReader(gz, int64(entry.Bytes)+1))
-		gz.Close()
-		f.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		hash := sha256.Sum256(raw)
-		if len(raw) != entry.Bytes || hex.EncodeToString(hash[:]) != entry.Hash {
-			t.Fatalf("corrupt root fixture %s", name)
-		}
-		files[name] = raw
-	}
+	_, files := fixture.Load(t, base, classkey.Pin, 12)
 	digest, err := hex.DecodeString("de82c3471f61accaa408d475404d7cd911edf04f23873a5d0f4fb9a2344ae171")
 	if err != nil {
 		t.Fatal(err)

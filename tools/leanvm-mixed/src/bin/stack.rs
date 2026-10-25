@@ -1,5 +1,6 @@
 //! Genuine point/strided/ring-switch openings, produced and checked by pinned Rust.
 use fiat_shamir::{ProofTranscript, ProverState, SessionId, VerifierState};
+use leanvm_mixed_reference::{PIN, hex};
 use pcs::{
     ring_switch::{RingSwitch, SliceClaim},
     stack::{CommittedStack, StackClaim, StackCommitment, Statement},
@@ -8,9 +9,6 @@ use pcs::{
 use primitives::field::{F64, F192};
 use serde_json::json;
 use std::num::NonZeroUsize;
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
-}
 fn limbs(x: F192) -> [u64; 3] {
     [x.c0, x.c1, x.c2]
 }
@@ -135,5 +133,13 @@ fn main() {
         }
         cases.push(json!({"log_n":log_n,"rate":rate,"lanes":lanes,"root":hex(&root),"instance":hex(&instance),"proof":hex(&proof.to_bytes()),"points":point_json,"rings":ring_json,"mutations":mutations,"wrong_claim_accept":verify(&proof,&bad_points,&bad_rings)}));
     }
-    std::fs::write(out,serde_json::to_string_pretty(&json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","session":hex(&session.0),"cases":cases})).unwrap()+"\n").unwrap();
+    std::fs::write(
+        out,
+        serde_json::to_string_pretty(
+            &json!({"upstream_commit":PIN,"session":hex(&session.0),"cases":cases}),
+        )
+        .unwrap()
+            + "\n",
+    )
+    .unwrap();
 }

@@ -1,5 +1,6 @@
 //! Genuine small weighted PCS openings for end-to-end WHIR verification.
 use fiat_shamir::{ProofTranscript, ProverState, SessionId, VerifierState};
+use leanvm_mixed_reference::{PIN, hex};
 use pcs::{
     stack::{CommittedStack, StackCommitment, Weighted},
     whir::Config,
@@ -7,9 +8,6 @@ use pcs::{
 use primitives::field::{F64, F192};
 use serde_json::json;
 use std::num::NonZeroUsize;
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
-}
 fn main() {
     parallel::init_with_threads(NonZeroUsize::new(2).unwrap()).unwrap();
     let out = std::env::args().nth(1).expect("output file");
@@ -72,5 +70,13 @@ fn main() {
         let wrong = target + F192::ONE;
         cases.push(json!({"log_n":log_n,"rate":rate,"lanes":lanes,"root":hex(&root),"instance":hex(&instance),"proof":hex(&proof.to_bytes()),"target":[target.c0,target.c1,target.c2],"weight":weight.map(|w|[w.c0,w.c1,w.c2]),"wrong_target_accept":verify(&proof,wrong),"mutations":mutations}));
     }
-    std::fs::write(out,serde_json::to_string_pretty(&json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","session":hex(&session.0),"cases":cases})).unwrap()+"\n").unwrap();
+    std::fs::write(
+        out,
+        serde_json::to_string_pretty(
+            &json!({"upstream_commit":PIN,"session":hex(&session.0),"cases":cases}),
+        )
+        .unwrap()
+            + "\n",
+    )
+    .unwrap();
 }

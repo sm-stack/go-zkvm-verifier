@@ -1,3 +1,4 @@
+use leanvm_mixed_reference::PIN;
 use primitives::field::{F64, F192};
 use serde_json::json;
 fn words(a: F192) -> [u64; 3] {
@@ -24,11 +25,7 @@ fn main() {
     }
     std::fs::write(
         out,
-        serde_json::to_string_pretty(
-            &json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","cases":cases}),
-        )
-        .unwrap()
-            + "\n",
+        serde_json::to_string_pretty(&json!({"upstream_commit":PIN,"cases":cases})).unwrap() + "\n",
     )
     .unwrap();
 }

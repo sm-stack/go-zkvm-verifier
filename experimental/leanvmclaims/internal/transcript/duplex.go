@@ -71,7 +71,7 @@ func (d *Duplex) Squeeze(out []byte) error {
 		return nil
 	}
 	if uint64(len(out)) > maxSqueeze-d.squeezed {
-		return errors.New("mixed: transcript squeeze overflow")
+		return errors.New("leanvmclaims: transcript squeeze overflow")
 	}
 	if d.n != 0 {
 		d.flush(true)

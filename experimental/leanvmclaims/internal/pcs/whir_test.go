@@ -3,7 +3,9 @@ package pcs
 import (
 	"encoding/hex"
 	"encoding/json"
+	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/transcript"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"os"
 	"slices"
 	"testing"
@@ -27,23 +29,17 @@ func TestRustWHIR(t *testing.T) {
 			}
 		}
 	}
-	data, e := os.ReadFile("../../testdata/whir.json")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if e = json.Unmarshal(data, &vectors); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/whir.json", &vectors)
 	if vectors.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
 		t.Fatal("stale pin")
 	}
 	var session [32]byte
-	copy(session[:], unhex(t, vectors.Session))
+	copy(session[:], fixture.Hex(t, vectors.Session))
 	for i, c := range vectors.Cases {
 		var root [32]byte
-		copy(root[:], unhex(t, c.Root))
-		instance := unhex(t, c.Instance)
-		proof, e := transcript.Decode(unhex(t, c.Proof))
+		copy(root[:], fixture.Hex(t, c.Root))
+		instance := fixture.Hex(t, c.Instance)
+		proof, e := transcript.Decode(fixture.Hex(t, c.Proof))
 		if e != nil {
 			t.Fatal(e)
 		}
@@ -57,7 +53,7 @@ func TestRustWHIR(t *testing.T) {
 			if e != nil {
 				return e
 			}
-			e = verifyWHIR(v, root, c.LogN, c.Rate, c.Lanes, value, func(point []E) E { return mle(weights, point[:1]).Mul(eqBits(0, point[1:])) })
+			e = verifyWHIR(v, root, c.LogN, c.Rate, c.Lanes, value, func(point []E) E { return mle(weights, point[:1]).Mul(field.EqBits(0, point[1:])) })
 			if e != nil {
 				return e
 			}
@@ -126,6 +122,6 @@ func FuzzWHIRProof(f *testing.F) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		_ = verifyWHIR(v, root, c.LogN, c.Rate, c.Lanes, target, func(point []E) E { return mle(weights, point[:1]).Mul(eqBits(0, point[1:])) })
+		_ = verifyWHIR(v, root, c.LogN, c.Rate, c.Lanes, target, func(point []E) E { return mle(weights, point[:1]).Mul(field.EqBits(0, point[1:])) })
 	})
 }

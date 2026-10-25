@@ -16,7 +16,7 @@ import (
 type E = field.Element
 
 var one = field.One
-var ErrTerminal = errors.New("mixed: PCS terminal claim mismatch")
+var ErrTerminal = errors.New("leanvmclaims: PCS terminal claim mismatch")
 
 type reader struct {
 	v   *transcript.Verifier
@@ -88,27 +88,10 @@ func (q quad) at(x E) E             { return q.a.Mul(x).Add(q.b).Mul(x).Add(q.c)
 func (q quad) fold(other quad, s E) quad {
 	return quad{q.c.Add(other.c.Mul(s)), q.b.Add(other.b.Mul(s)), q.a.Add(other.a.Mul(s))}
 }
-func eq(a, b []E) E {
-	v := one
-	for i, x := range a {
-		v = v.Mul(one.Add(x).Add(b[i]))
-	}
-	return v
-}
-func eqBits(index uint64, point []E) E {
-	v := one
-	for i, x := range point {
-		if index>>uint(i)&1 == 0 {
-			x = x.Add(one)
-		}
-		v = v.Mul(x)
-	}
-	return v
-}
 func eqPrefix(point []E, n int) []E {
 	out := make([]E, n)
 	for i := range out {
-		out[i] = eqBits(uint64(i), point)
+		out[i] = field.EqBits(uint64(i), point)
 	}
 	return out
 }
@@ -320,7 +303,7 @@ func (w *replay) terminal(yr, tail []E, weightAt func([]E) E) error {
 			return ErrOpening
 		}
 		point := append(slices.Clone(w.ris[c.start:c.start+folded]), tail...)
-		weight = weight.Add(c.beta.Mul(eq(c.z, point)))
+		weight = weight.Add(c.beta.Mul(field.Eq(c.z, point)))
 	}
 	point := append(slices.Clone(w.ris), tail...)
 	k := w.config.initialK

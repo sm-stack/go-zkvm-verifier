@@ -11,7 +11,7 @@ import (
 	"slices"
 )
 
-var ErrEncoding = errors.New("mixed: malformed root or claims encoding")
+var ErrEncoding = errors.New("leanvmclaims: malformed root or claims encoding")
 
 type Element [3]uint64
 type Root struct {
@@ -26,7 +26,7 @@ func DecodeRoot(data []byte) (Root, error) {
 		return Root{}, ErrEncoding
 	}
 	if version := binary.LittleEndian.Uint16(data[4:6]); version != 20 {
-		return Root{}, fmt.Errorf("mixed: root version %d, expected 20", version)
+		return Root{}, fmt.Errorf("leanvmclaims: root version %d, expected 20", version)
 	}
 	rate := data[6]
 	if rate < 1 || rate > 4 {
@@ -116,20 +116,20 @@ func (c Claims) Check(claimBound, groupBound uint64) error {
 	var total uint64
 	for i, g := range c {
 		if i > 0 && slices.Compare(c[i-1].Label[:], g.Label[:]) >= 0 {
-			return errors.New("mixed: unordered claim groups")
+			return errors.New("leanvmclaims: unordered claim groups")
 		}
 		if len(g.Members) == 0 {
-			return errors.New("mixed: empty claim group")
+			return errors.New("leanvmclaims: empty claim group")
 		}
 		for j := 1; j < len(g.Members); j++ {
 			if slices.Compare(g.Members[j-1][:], g.Members[j][:]) >= 0 {
-				return errors.New("mixed: unordered claim members")
+				return errors.New("leanvmclaims: unordered claim members")
 			}
 		}
 		total += uint64(len(g.Members))
 	}
 	if total >= claimBound || uint64(len(c)) > groupBound {
-		return errors.New("mixed: claim capacity exceeded")
+		return errors.New("leanvmclaims: claim capacity exceeded")
 	}
 	return nil
 }

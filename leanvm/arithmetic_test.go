@@ -1,6 +1,7 @@
 package leanvm
 
 import (
+	"github.com/sm-stack/go-zkvm-verifier/internal/gf2"
 	"github.com/stretchr/testify/require"
 	"math/rand/v2"
 	"testing"
@@ -21,7 +22,7 @@ func TestCarrylessProducts(t *testing.T) {
 	r := rand.New(rand.NewPCG(11, 19))
 	check := func(a, b uint64) {
 		h, l := clmulSlow(a, b)
-		x, y := clmul(a, b)
+		x, y := gf2.Clmul(a, b)
 		require.Equal(t, h, x)
 		require.Equal(t, l, y)
 	}
@@ -41,7 +42,7 @@ func BenchmarkCarryless(b *testing.B) {
 	for _, tc := range []struct {
 		name string
 		f    func(uint64, uint64) (uint64, uint64)
-	}{{"wide", clmul}} {
+	}{{"wide", gf2.Clmul}} {
 		b.Run(tc.name, func(b *testing.B) {
 			var x uint64 = 7
 			for range b.N {
@@ -84,7 +85,7 @@ func TestExtensionProductIndependent(t *testing.T) {
 		for i, x := range aa {
 			for j, y := range bb {
 				h, l := clmulSlow(x, y)
-				coefficients[i+j] ^= reduce(h, l)
+				coefficients[i+j] ^= gf2.Reduce(h, l)
 			}
 		}
 		want := ext{coefficients[0] ^ coefficients[3], coefficients[1] ^ coefficients[3] ^ coefficients[4], coefficients[2] ^ coefficients[4]}

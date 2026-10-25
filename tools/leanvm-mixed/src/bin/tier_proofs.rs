@@ -4,10 +4,8 @@ use leanvm::aggregate::{
 };
 use leanvm::asm::{Asm, Reg};
 use leanvm::{PerTable, Program, Rate, TableId};
+use leanvm_mixed_reference::hex;
 use std::path::Path;
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|v| format!("{v:02x}")).collect()
-}
 fn main() {
     parallel::init_with_threads(std::num::NonZeroUsize::new(2).unwrap()).unwrap();
     let arg = std::env::args().nth(1).unwrap();

@@ -7,7 +7,7 @@ import (
 	"slices"
 )
 
-var ErrLayout = errors.New("mixed: unsupported or malformed layout")
+var ErrLayout = errors.New("leanvmclaims: unsupported or malformed layout")
 
 // Placement is a committed window (Kind=0) or a port of the packed hash witness
 // (Kind=1). Ports freeze the low Stride coordinates to Slot.
@@ -17,11 +17,10 @@ type Placement struct {
 	Vars, Slot, Stride int
 }
 type Layout struct {
-	Heights      [6]int
-	Placements   []Placement
-	Mu, Lanes    int
-	FixedOffsets [102]uint64
-	FixedVars    int
+	Heights    [6]int
+	Placements []Placement
+	Mu, Lanes  int
+	FixedVars  int
 }
 
 var ownedColumns = [5]int{9, 7, 19, 65, 4}
@@ -102,8 +101,7 @@ func NewLayout(heights [6]uint64) (*Layout, error) {
 			fixed = append(fixed, l.Heights[t])
 		}
 	}
-	fixedOff, fixedSize := offsets(fixed)
-	copy(l.FixedOffsets[:], fixedOff)
+	_, fixedSize := offsets(fixed)
 	l.FixedVars = ceilLog(fixedSize)
 	return l, nil
 }

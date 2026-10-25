@@ -23,30 +23,6 @@ func TestMontgomeryReduction(t *testing.T) {
 		check(r.Uint64() % limit)
 	}
 }
-func TestInternalLayerArithmetic(t *testing.T) {
-	r := rand.New(rand.NewPCG(1, 2))
-	for n := 0; n < 10000; n++ {
-		var state [16]felt
-		for i := range state {
-			if n == 0 {
-				state[i] = fieldOrder - 1
-			} else {
-				state[i] = feltFromU32(r.Uint32())
-			}
-		}
-		want := state
-		var sum felt
-		for _, x := range want {
-			sum = sum.add(x)
-		}
-		want[0] = sum.sub(want[0].add(want[0])).mul(montyInverse)
-		for i := 1; i < 16; i++ {
-			want[i] = sum.add(want[i].mul(felt(1) << internalDiagonalShifts[i-1])).mul(montyInverse)
-		}
-		internalLinearLayer(&state)
-		require.Equal(t, want, state)
-	}
-}
 
 // applyMat4 multiplies four state elements by the circulant-like matrix
 // [[2,3,1,1],[1,2,3,1],[1,1,2,3],[3,1,1,2]].

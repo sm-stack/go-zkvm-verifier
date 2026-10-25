@@ -52,22 +52,22 @@ var load = sync.OnceValues(func() (*Schema, error) {
 		return nil, e
 	}
 	if s.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" || len(s.LeafMinHeights) != 11 || len(s.Circuits) != 21 || len(s.LeafColumns) != 11 || len(s.RegisterBits) != 11 || len(s.CircuitTables) != 21 || s.HashCircuit < 0 || s.HashCircuit >= len(s.Circuits) {
-		return nil, errors.New("mixed: invalid generated circuit metadata")
+		return nil, errors.New("leanvmclaims: invalid generated circuit metadata")
 	}
 	for i := range s.LeafColumns {
 		if s.LeafColumns[i] < 0 || s.LeafColumns[i] > 64 || s.RegisterBits[i] < 0 || s.RegisterBits[i] > 64 || s.LeafMinHeights[i] < 0 || s.LeafMinHeights[i] > 32 {
-			return nil, errors.New("mixed: invalid generated table shape")
+			return nil, errors.New("leanvmclaims: invalid generated table shape")
 		}
 	}
 	if s.RegisterLog != 6 || s.InitialK != 6 || s.MinMu != 15 || s.MaxMu != 28 || s.MinBytecode != 12 || s.MaxLogRows != 32 || s.HashPorts != 18 || s.MinCubeLog != 13 {
-		return nil, errors.New("mixed: invalid generated layout constants")
+		return nil, errors.New("leanvmclaims: invalid generated layout constants")
 	}
 	for i, c := range s.Circuits {
 		if s.CircuitTables[i] < 0 || s.CircuitTables[i] >= 11 || c.KLog < s.InitialK {
-			return nil, errors.New("mixed: invalid generated circuit table")
+			return nil, errors.New("leanvmclaims: invalid generated circuit table")
 		}
 		if c.Index != i || c.KLog < 0 || c.KLog > 20 || c.ConstPos < 0 || c.ConstPos >= 1<<uint(c.KLog) || c.UsefulBits > 1<<uint(c.KLog) {
-			return nil, errors.New("mixed: invalid generated circuit shape")
+			return nil, errors.New("leanvmclaims: invalid generated circuit shape")
 		}
 		for j, g := range c.Gates {
 			slot := uint32(0)
@@ -76,24 +76,24 @@ var load = sync.OnceValues(func() (*Schema, error) {
 				slot = g[1]
 			case 1:
 				if int(g[1]) >= j || int(g[2]) >= j {
-					return nil, errors.New("mixed: cyclic XOR gate")
+					return nil, errors.New("leanvmclaims: cyclic XOR gate")
 				}
 				continue
 			case 2:
 				if int(g[1]) >= j || int(g[2]) >= j {
-					return nil, errors.New("mixed: cyclic product gate")
+					return nil, errors.New("leanvmclaims: cyclic product gate")
 				}
 				slot = g[3]
 			case 3:
 				if int(g[1]) >= j {
-					return nil, errors.New("mixed: cyclic copy gate")
+					return nil, errors.New("leanvmclaims: cyclic copy gate")
 				}
 				slot = g[2]
 			default:
-				return nil, errors.New("mixed: unknown generated gate")
+				return nil, errors.New("leanvmclaims: unknown generated gate")
 			}
 			if uint64(slot) >= uint64(1)<<uint(c.KLog) {
-				return nil, errors.New("mixed: generated gate slot outside circuit")
+				return nil, errors.New("leanvmclaims: generated gate slot outside circuit")
 			}
 		}
 	}
@@ -107,7 +107,7 @@ var load = sync.OnceValues(func() (*Schema, error) {
 // the evaluation weights of committed slots; scratch is private to one verify.
 func (c *Circuit) Bilinear(alpha field.Element, row, column func(int) field.Element, scratch []field.Element) (field.Element, error) {
 	if len(scratch) < len(c.Gates) {
-		return field.Element{}, errors.New("mixed: circuit scratch too short")
+		return field.Element{}, errors.New("leanvmclaims: circuit scratch too short")
 	}
 	scaledOne := alpha.Mul(column(c.ConstPos))
 	var total field.Element

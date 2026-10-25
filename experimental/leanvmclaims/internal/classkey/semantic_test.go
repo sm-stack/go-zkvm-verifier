@@ -2,6 +2,7 @@ package classkey
 
 import (
 	"encoding/binary"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
 
@@ -16,12 +17,12 @@ func TestSemanticClasses(t *testing.T) {
 				cfg.Small = &SmallTier{2, 2, 2}
 			}
 			data := input(t, v)
-			pin := [32]byte(unhex(t, v.Digest))
+			pin := [32]byte(fixture.Hex(t, v.Digest))
 			got, err := Load(data, pin, cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if v.PlaceholderDigest == "" || got.ProgramDigest != [32]byte(unhex(t, v.PlaceholderDigest)) {
+			if v.PlaceholderDigest == "" || got.ProgramDigest != [32]byte(fixture.Hex(t, v.PlaceholderDigest)) {
 				t.Fatal("Rust placeholder digest differs")
 			}
 			if len(v.SemanticCases) != 14 {
@@ -41,15 +42,18 @@ func TestSemanticClasses(t *testing.T) {
 				}
 				edited := append([]byte(nil), data...)
 				binary.LittleEndian.PutUint64(edited[8+8*m.Index:], m.Value)
-				_, err := Load(edited, [32]byte(unhex(t, m.Digest)), changed)
+				_, err := Load(edited, [32]byte(fixture.Hex(t, m.Digest)), changed)
 				if (err == nil) != m.Accept {
 					t.Fatalf("Rust class dimension %d=%d: %v (Rust %v)", m.Index, m.Value, err, m.Accept)
 				}
 			}
 			for _, m := range v.Mutations {
 				edited := append([]byte(nil), data...)
+				if edited[m.Offset] == m.Value {
+					t.Fatalf("ineffective mutation %s", m.Name)
+				}
 				edited[m.Offset] = m.Value
-				_, err := Load(edited, [32]byte(unhex(t, m.Digest)), cfg)
+				_, err := Load(edited, [32]byte(fixture.Hex(t, m.Digest)), cfg)
 				if (err == nil) != m.Accept {
 					t.Fatalf("Rust semantic mutation %s: %v", m.Name, err)
 				}

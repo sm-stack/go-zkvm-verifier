@@ -11,20 +11,15 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import subprocess
 import tempfile
 
-ROOT=Path(__file__).resolve().parents[2]
-PIN='da5c964831c993b011464e4fd4a573b7172d5295'
+from common import ROOT, PIN, checkout, write_gzip, write_manifest, run as run_reference
 p=argparse.ArgumentParser();p.add_argument('--check',action='store_true');a=p.parse_args()
 env=dict(os.environ,CARGO_BUILD_JOBS='2',CARGO_TARGET_DIR=str(ROOT/'tools/leanvm-mixed/target/upstream-example'))
-def run(cmd,**kw):return subprocess.run(cmd,env=env,check=True,**kw)
+def run(cmd,**kw):return run_reference(cmd,env=env,**kw)
 with tempfile.TemporaryDirectory(prefix='mixed-forgery-') as tmp:
     source=Path(tmp)/'source';inputs=Path(tmp)/'inputs';out=Path(tmp)/'out'
-    run(['git','init','-q',str(source)])
-    run(['git','-C',str(source),'fetch','--depth=1','https://github.com/sm-stack/leanVM',PIN])
-    run(['git','-C',str(source),'checkout','-q','--detach','FETCH_HEAD'])
-    if run(['git','-C',str(source),'rev-parse','HEAD'],capture_output=True,text=True).stdout.strip()!=PIN:raise SystemExit('wrong revision')
+    checkout(source)
     for name in ['class-key.bin','wide/root.bin','wide/claims.bin']:
         path=inputs/name;path.parent.mkdir(parents=True,exist_ok=True)
         path.write_bytes(gzip.decompress((ROOT/'experimental/leanvmclaims/testdata/tiers'/(name+'.gz')).read_bytes()))
@@ -50,12 +45,7 @@ with tempfile.TemporaryDirectory(prefix='mixed-forgery-') as tmp:
     for name in names:
         raw=(out/name).read_bytes();manifest['files'][name]={'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
         path=fixture/(name+'.gz')
-        if a.check:
-            if gzip.decompress(path.read_bytes())!=raw:raise SystemExit(f'forgery differs: {name}')
-        else:
-            path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(gzip.compress(raw,mtime=0))
+        write_gzip(path, raw, a.check)
     path=fixture/'provenance.json'
-    if a.check:
-        if json.loads(path.read_text())!=manifest:raise SystemExit('forgery provenance differs')
-    else:path.write_text(json.dumps(manifest,indent=2)+'\n')
+    write_manifest(path, manifest, a.check)
 print('verified upstream forged-wrap regression and exported 5 files')

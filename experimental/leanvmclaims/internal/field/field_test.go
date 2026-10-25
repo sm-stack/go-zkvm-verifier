@@ -1,8 +1,7 @@
 package field
 
 import (
-	"encoding/json"
-	"os"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
 
@@ -15,17 +14,11 @@ func TestRustField(t *testing.T) {
 			BaseInverse                               uint64 `json:"base_inverse"`
 		}
 	}
-	data, e := os.ReadFile("../../testdata/field.json")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if e = json.Unmarshal(data, &v); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/field.json", &v)
 	if v.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
 		t.Fatal("stale pin")
 	}
-	elem := func(w [3]uint64) Element { return Element{w[0], w[1], w[2]} }
+	elem := func(w [3]uint64) Element { return Element{C0: w[0], C1: w[1], C2: w[2]} }
 	for i, c := range v.Cases {
 		a, b := elem(c.A), elem(c.B)
 		if a.Mul(b) != elem(c.Product) || a.Square() != elem(c.Square) || a.Inv() != elem(c.Inverse) || a.Frobenius64() != elem(c.Frobenius) || Mul64(a.C0, b.C0) != c.BaseProduct || Inv64(a.C0) != c.BaseInverse {
@@ -37,7 +30,7 @@ func FuzzField(f *testing.F) {
 	f.Add(uint64(0), uint64(0), uint64(0))
 	f.Add(^uint64(0), uint64(1), uint64(1)<<63)
 	f.Fuzz(func(t *testing.T, a, b, c uint64) {
-		x := Element{a, b, c}
+		x := Element{C0: a, C1: b, C2: c}
 		if x.Square() != x.Mul(x) {
 			t.Fatal("square differs")
 		}

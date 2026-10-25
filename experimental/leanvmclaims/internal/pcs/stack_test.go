@@ -1,9 +1,8 @@
 package pcs
 
 import (
-	"encoding/json"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/transcript"
-	"os"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"slices"
 	"testing"
 )
@@ -42,21 +41,15 @@ func TestRustStack(t *testing.T) {
 			WrongClaimAccept bool `json:"wrong_claim_accept"`
 		}
 	}
-	data, e := os.ReadFile("../../testdata/stack.json")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if e = json.Unmarshal(data, &vectors); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/stack.json", &vectors)
 	if vectors.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
 		t.Fatal("stale pin")
 	}
 	var session [32]byte
-	copy(session[:], unhex(t, vectors.Session))
+	copy(session[:], fixture.Hex(t, vectors.Session))
 	for i, c := range vectors.Cases {
 		var root [32]byte
-		copy(root[:], unhex(t, c.Root))
+		copy(root[:], fixture.Hex(t, c.Root))
 		points := make([]PointClaim, len(c.Points))
 		for j, p := range c.Points {
 			points[j] = PointClaim{p.Offset, p.Slot, p.StrideLog, fromPoints(p.Point), fromLimbs(p.Value)}
@@ -68,8 +61,8 @@ func TestRustStack(t *testing.T) {
 				rings[j].Claims = append(rings[j].Claims, SliceClaim{fromPoints(claim.Point), fromPoints(claim.Slices)})
 			}
 		}
-		instance := unhex(t, c.Instance)
-		proof, e := transcript.Decode(unhex(t, c.Proof))
+		instance := fixture.Hex(t, c.Instance)
+		proof, e := transcript.Decode(fixture.Hex(t, c.Proof))
 		if e != nil {
 			t.Fatal(e)
 		}

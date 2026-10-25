@@ -2,11 +2,8 @@ package classkey
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/binary"
-	"encoding/hex"
-	"encoding/json"
-	"io"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,17 +34,11 @@ type vector struct {
 
 func vectors(t testing.TB) []vector {
 	t.Helper()
-	b, e := os.ReadFile("../../testdata/classes.json")
-	if e != nil {
-		t.Fatal(e)
-	}
 	var v struct {
 		Pin     string `json:"upstream_commit"`
 		Classes []vector
 	}
-	if e = json.Unmarshal(b, &v); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/classes.json", &v)
 	if v.Pin != Pin || len(v.Classes) != 2 {
 		t.Fatal("stale or missing Rust vectors")
 	}
@@ -67,31 +58,9 @@ func vectors(t testing.TB) []vector {
 	}
 	return v.Classes
 }
-func unhex(t testing.TB, s string) []byte {
-	t.Helper()
-	b, e := hex.DecodeString(s)
-	if e != nil {
-		t.Fatal(e)
-	}
-	return b
-}
 func input(t testing.TB, v vector) []byte {
 	t.Helper()
-	f, e := os.Open(filepath.Join("../../testdata", v.Name+".key.gz"))
-	if e != nil {
-		t.Fatal(e)
-	}
-	defer f.Close()
-	r, e := gzip.NewReader(f)
-	if e != nil {
-		t.Fatal(e)
-	}
-	defer r.Close()
-	b, e := io.ReadAll(io.LimitReader(r, int64(v.Bytes)+1))
-	if e != nil || len(b) != v.Bytes {
-		t.Fatalf("fixture length: %d %v", len(b), e)
-	}
-	return b
+	return fixture.Gzip(t, filepath.Join("../../testdata", v.Name+".key.gz"), v.Bytes)
 }
 func TestRustClassKeyVectors(t *testing.T) {
 	for _, v := range vectors(t) {
@@ -100,8 +69,8 @@ func TestRustClassKeyVectors(t *testing.T) {
 				t.Fatal("expected explicitly labelled loader-only fixture")
 			}
 			b := input(t, v)
-			desc := unhex(t, v.Descriptor)
-			pin := [32]byte(unhex(t, v.Digest))
+			desc := fixture.Hex(t, v.Descriptor)
+			pin := [32]byte(fixture.Hex(t, v.Digest))
 			if Digest(b) != pin {
 				t.Fatal("Rust/Go digest differs")
 			}
@@ -119,7 +88,7 @@ func TestRustClassKeyVectors(t *testing.T) {
 				edited := bytes.Clone(b)
 				edited[m.Offset] = m.Value
 				d := Digest(edited)
-				if d != [32]byte(unhex(t, m.Digest)) {
+				if d != [32]byte(fixture.Hex(t, m.Digest)) {
 					t.Fatal("mutated digest", m.Name)
 				}
 				_, e := Decode(edited, d, desc)
@@ -177,7 +146,7 @@ func BenchmarkLoadClassKey(b *testing.B) {
 	for _, v := range vectors(b) {
 		b.Run(v.Name, func(b *testing.B) {
 			data := input(b, v)
-			desc := unhex(b, v.Descriptor)
+			desc := fixture.Hex(b, v.Descriptor)
 			pin := Digest(data)
 			b.ReportAllocs()
 			b.SetBytes(int64(len(data)))

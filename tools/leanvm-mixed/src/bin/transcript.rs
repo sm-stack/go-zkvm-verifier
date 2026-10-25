@@ -1,9 +1,7 @@
 //! Small component vectors; no setup or proof generation required.
 use fiat_shamir::{Blake2sDuplex, ProofTranscript, ProverState, SessionId};
+use leanvm_mixed_reference::{PIN, hex};
 use serde_json::json;
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
-}
 fn main() {
     let out = std::env::args().nth(1).expect("output file");
     let relation = std::array::from_fn::<_, 32, _>(|i| i as u8);
@@ -47,7 +45,7 @@ fn main() {
     std::fs::write(
         out,
         serde_json::to_string_pretty(&json!({
-          "upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295",
+          "upstream_commit":PIN,
           "relation":hex(&relation),"session":hex(&session.0),"proof":hex(&proof),
           "challenges":[hex(&a),hex(&b),hex(&c)],"duplex":cases,"framing":framing
         }))

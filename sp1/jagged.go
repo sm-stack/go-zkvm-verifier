@@ -116,7 +116,8 @@ func verifyJagged(commitments []digest, point []ext, claims [][]ext, p *jaggedPr
 	for round, rc := range counts {
 		var area uint64
 		for _, e := range rc[:len(rc)-2] {
-			area = saturatingAdd(area, saturatingMul(e[0], e[1]))
+			// The checked sum of all nonnegative areas above is below 2^30.
+			area += e[0] * e[1]
 		}
 		if area == 0 || area >= 1<<30 {
 			return errJaggedAreaBounds
@@ -206,22 +207,6 @@ func verifyJagged(commitments []digest, point []ext, claims [][]ext, p *jaggedPr
 		return fmt.Errorf("dense pcs verification failed: %w", err)
 	}
 	return nil
-}
-
-func saturatingAdd(a, b uint64) uint64 {
-	s, carry := bits.Add64(a, b, 0)
-	if carry != 0 {
-		return ^uint64(0)
-	}
-	return s
-}
-
-func saturatingMul(a, b uint64) uint64 {
-	hi, lo := bits.Mul64(a, b)
-	if hi != 0 {
-		return ^uint64(0)
-	}
-	return lo
 }
 
 // verifyJaggedEvaluation checks the sumcheck proving the jagged little polynomial's evaluation at

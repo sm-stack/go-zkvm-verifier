@@ -1,8 +1,7 @@
 package machine
 
 import (
-	"encoding/json"
-	"os"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
 
@@ -16,13 +15,7 @@ func TestRustLayouts(t *testing.T) {
 			Placements [][4]uint64
 		}
 	}
-	b, err := os.ReadFile("../../testdata/layouts.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &v); err != nil {
-		t.Fatal(err)
-	}
+	fixture.JSON(t, "../../testdata/layouts.json", &v)
 	s, err := Load()
 	if err != nil {
 		t.Fatal(err)
@@ -63,13 +56,7 @@ func TestRustLeafSizes(t *testing.T) {
 			Accept  bool
 		} `json:"leaf_cases"`
 	}
-	b, err := os.ReadFile("../../testdata/layouts.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &v); err != nil {
-		t.Fatal(err)
-	}
+	fixture.JSON(t, "../../testdata/layouts.json", &v)
 	s, err := Load()
 	if err != nil {
 		t.Fatal(err)

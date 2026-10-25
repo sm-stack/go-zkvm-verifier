@@ -6,27 +6,47 @@ No original workspace or Cargo checkout is ever edited.
 """
 import argparse
 import json
+import hashlib
 import os
 from pathlib import Path
-import subprocess
 import tempfile
 
-ROOT=Path(__file__).resolve().parents[2]
-PIN='da5c964831c993b011464e4fd4a573b7172d5295'
+from common import ROOT, PIN, checkout, run as run_reference
 p=argparse.ArgumentParser()
 p.add_argument('--check',action='store_true')
+p.add_argument('--summary-only', action='store_true', help='review the checked-in metadata without fetching or building Rust')
 a=p.parse_args()
 env=dict(os.environ,CARGO_BUILD_JOBS='2',CARGO_TARGET_DIR=str(ROOT/'tools/leanvm-mixed/target/upstream-example'))
 def run(cmd,**kw):
-    return subprocess.run(cmd,env=env,check=True,**kw)
+    return run_reference(cmd,env=env,**kw)
+def review_summary(metadata):
+    def digest(value):
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    result = {k:v for k,v in metadata.items() if k not in ('circuits', 'rec_tables')}
+    result['rec_tables_sha256'] = digest(metadata['rec_tables'])
+    result['circuits'] = []
+    for circuit in metadata['circuits']:
+        entry = {k:v for k,v in circuit.items() if k != 'gates'}
+        gates = circuit['gates']
+        entry['gate_count'] = len(gates)
+        entry['gate_kinds'] = {str(kind):sum(g[0] == kind for g in gates) for kind in sorted({g[0] for g in gates})}
+        entry['gates_sha256'] = digest(gates)
+        result['circuits'].append(entry)
+    target = ROOT/'experimental/leanvmclaims/internal/machine/metadata-review.json'
+    content = json.dumps(result, indent=2, sort_keys=True)+'\n'
+    if a.check:
+        if target.read_text() != content:
+            raise SystemExit('metadata review summary differs')
+    else:
+        target.write_text(content)
+
+if a.summary_only:
+    review_summary(json.loads((ROOT/'experimental/leanvmclaims/internal/machine/metadata.json').read_text()))
+    raise SystemExit(0)
+
 with tempfile.TemporaryDirectory(prefix='mixed-metadata-') as tmp:
     source=Path(tmp)/'source'
-    run(['git','init','-q',str(source)])
-    run(['git','-C',str(source),'fetch','--depth=1','https://github.com/sm-stack/leanVM',PIN])
-    run(['git','-C',str(source),'checkout','-q','--detach','FETCH_HEAD'])
-    got=run(['git','-C',str(source),'rev-parse','HEAD'],capture_output=True,text=True).stdout.strip()
-    if got!=PIN:
-        raise SystemExit('unexpected upstream revision')
+    checkout(source)
     snippets=ROOT/'tools/leanvm-mixed/exporter'
     for name,path in [('flock.rs','crates/flock/src/circuit.rs'),('leanvm.rs','crates/leanvm_core/src/lib.rs'),('rec.rs','crates/leanvm_core/src/rec/mod.rs'),('cpu.rs','crates/leanvm_core/src/cpu/mod.rs')]:
         target=source/path
@@ -51,3 +71,5 @@ with tempfile.TemporaryDirectory(prefix='mixed-metadata-') as tmp:
         else:
             target.parent.mkdir(parents=True,exist_ok=True)
             target.write_bytes(content)
+
+    review_summary(metadata)

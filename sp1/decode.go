@@ -167,15 +167,7 @@ func (t *tensor[T]) rows() [][]T {
 
 // isShape reports whether the tensor's dimensions are exactly dims.
 func (t *tensor[T]) isShape(dims ...uint64) bool {
-	if len(t.dims) != len(dims) {
-		return false
-	}
-	for i := range dims {
-		if t.dims[i] != dims[i] {
-			return false
-		}
-	}
-	return true
+	return slices.Equal(t.dims, dims)
 }
 
 func decodeTensor[T any](d *decoder, elems func(*decoder) []T) tensor[T] {

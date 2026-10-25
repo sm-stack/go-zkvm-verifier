@@ -1,27 +1,18 @@
 package machine
 
 import (
-	"encoding/json"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
-	"os"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
 
 func elem(w [3]uint64) field.Element { return field.Element{C0: w[0], C1: w[1], C2: w[2]} }
 func eqTable(point [][3]uint64) []field.Element {
-	out := make([]field.Element, 1, 1<<uint(len(point)))
-	out[0] = field.One
-	for _, w := range point {
-		r := elem(w)
-		n := len(out)
-		out = out[:2*n]
-		for i := 0; i < n; i++ {
-			high := out[i].Mul(r)
-			out[n+i] = high
-			out[i] = out[i].Add(high)
-		}
+	p := make([]field.Element, len(point))
+	for i, w := range point {
+		p[i] = elem(w)
 	}
-	return out
+	return field.EqTable(p)
 }
 func TestRustMatrices(t *testing.T) {
 	s, e := Load()
@@ -38,13 +29,7 @@ func TestRustMatrices(t *testing.T) {
 			}
 		}
 	}
-	data, e := os.ReadFile("../../testdata/matrices.json")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if e = json.Unmarshal(data, &v); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/matrices.json", &v)
 	if v.Pin != s.Pin || len(v.Circuits) != len(s.Circuits) {
 		t.Fatal("stale or incomplete matrix vectors")
 	}

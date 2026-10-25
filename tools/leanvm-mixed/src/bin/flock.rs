@@ -7,13 +7,11 @@ use flock::{
     reduction,
     test_util::Witness,
 };
+use leanvm_mixed_reference::{PIN, hex};
 use primitives::field::{F192, PHI8_TABLE};
 use serde_json::json;
 fn limbs(x: F192) -> [u64; 3] {
     [x.c0, x.c1, x.c2]
-}
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
 }
 fn circuit(mul: bool) -> Circuit {
     let mut c = Builder::new(&[64, 64], &[64]);
@@ -85,5 +83,5 @@ fn main() {
         }
         cases.push(json!({"shapes":shapes.iter().map(|(s,n)|json!({"KLog":s.k_log,"Pin":s.const_pin_col,"LogInstances":n})).collect::<Vec<_>>(),"messages":hex(&proof.narg),"results":results,"mutations":mutations}));
     }
-    std::fs::write(out,serde_json::to_vec(&json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","session":hex(&session.0),"phi":PHI8_TABLE.iter().copied().map(limbs).collect::<Vec<_>>(),"cases":cases})).unwrap()).unwrap();
+    std::fs::write(out,serde_json::to_vec(&json!({"upstream_commit":PIN,"session":hex(&session.0),"phi":PHI8_TABLE.iter().copied().map(limbs).collect::<Vec<_>>(),"cases":cases})).unwrap()).unwrap();
 }

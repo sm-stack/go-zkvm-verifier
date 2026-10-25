@@ -1,36 +1,39 @@
 stark-go-verify
 
-Go verifier sources, original fixtures, and Rust generation tools were extracted
-and adapted from the Optimism source tree at commit
-28c4c5b77f7b713ac081e40963eead49c26e2c18.
-Copyright 2020-2025 Optimism. MIT license retained verbatim in LICENSE.
-Original contributions include work by sm-stack and credited collaborators in
-the source repository history. See UPSTREAM.md for original paths and changes.
+This project is distributed under the MIT license in LICENSE and includes
+material derived from the projects below. See UPSTREAM.md for exact revisions
+and regeneration instructions. Existing source-level notices are retained.
 
-leanVM algorithms and guest artifacts derive from sm-stack/leanVM at
-c3fc7b2a9195ed995f7f7e9f8245ad6e8a4dfb14.
+Optimism — https://github.com/sm-stack/optimism
+Adapted Go verifiers, fixtures and reference tools in leanvm/, sp1/,
+internal/gf2/, tools/leanvm/ and tools/sp1/.
+Copyright 2020-2025 Optimism.
+MIT; original license text and copyright notice preserved in LICENSE.
+
+leanVM — https://github.com/sm-stack/leanVM
+Verification algorithms and artifacts in leanvm/, experimental/leanvmclaims/,
+internal/gf2/ and their Rust reference tools.
 Copyright (c) 2026 leanEthereum.
-Upstream MIT and Apache-2.0 license texts are retained in LICENSES/leanVM-*.
+MIT OR Apache-2.0; the MIT option is used for this port.
+License texts: LICENSES/leanVM-LICENSE-MIT and LICENSES/leanVM-LICENSE-APACHE.
 
-SP1 algorithms, generated constraints/constants and proof artifacts derive from
-Succinct Labs SP1 6.8.1, commit c84ada1ed5911f28c4d3c9d0ed2f9e6cd7edb824.
-Copyright (c) 2023 Succinct Labs. MIT OR Apache-2.0.
-Upstream texts retained in LICENSES/SP1-*; the MIT option is used for extraction.
+SP1 — https://github.com/succinctlabs/sp1
+Verification algorithms, generated constraints/constants and proof artifacts
+in sp1/ and tools/sp1/.
+Copyright (c) 2023 Succinct Labs.
+MIT OR Apache-2.0; the MIT option is used for this port.
+License texts: LICENSES/SP1-LICENSE-MIT and LICENSES/SP1-LICENSE-APACHE.
 
-Runtime Go dependencies are resolved through go.mod/go.sum, not vendored:
-golang.org/x/crypto and x/sys (Go Authors, BSD-3-Clause),
-lukechampine.com/blake3 (Luke Champine, MIT), and its cpuid dependency
-(Klaus Post, MIT). Test-only dependencies retain their respective module licenses.
+flock — https://github.com/succinctlabs/flock (MIT OR Apache-2.0)
+bolt-rs — https://github.com/bcc-research/bolt-rs (MIT)
+Attributions inherited through leanVM for experimental/leanvmclaims/internal/pcs/
+and experimental/leanvmclaims/internal/flock/.
+Copyright (c) 2026 Bain Capital Crypto, LP and Ron Rothblum.
+Modifications copyright 2026 Succinct Labs, Benedikt Bunz, William Wang.
+The MIT option is used. See the source headers and LICENSES/leanVM-LICENSE-MIT.
 
-Optimism extraction commit IDs record local source history. Public availability
-of those commits is not required for building or testing this distribution.
-
-The experimental/leanvmclaims verifier, components and Rust fixtures are derived from
-sm-stack/leanVM commit da5c964831c993b011464e4fd4a573b7172d5295 (MIT).
-Compact zero-column fixtures are for loader tests only, not genuine circuit keys.
-
-The mixed PCS port retains upstream credits to succinctlabs/flock (flock-core,
-MIT OR Apache-2.0) and bcc-research/bolt-rs (MIT). Copyright (c) 2026 Bain Capital
-Crypto, LP and Ron Rothblum; modifications copyright 2026 Succinct Labs,
-Benedikt Bunz, William Wang. The MIT option is used; see source headers and
-LICENSES/leanVM-* for the upstream license texts.
+Runtime Go dependencies (resolved through go.mod/go.sum, not vendored):
+- golang.org/x/crypto and golang.org/x/sys: Go Authors, BSD-3-Clause.
+- lukechampine.com/blake3: Luke Champine, MIT.
+- github.com/klauspost/cpuid/v2: Klaus Post, MIT.
+Dependency license texts and copyright notices accompany their modules.

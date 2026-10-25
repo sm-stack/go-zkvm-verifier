@@ -50,11 +50,11 @@
           "value": 0
         },
         {
-          "accept": true,
-          "digest": "de6425ea29fb3bb8ca7c54402c3b8215cb8289d5655f5424e75d9ce77629701c",
+          "accept": false,
+          "digest": "0d40a36b9d40ad58b599a09df93c879f7b1bf8d050899f353794ae43506d716f",
           "name": "column-length",
           "offset": 392,
-          "value": 0
+          "value": 1
         }
       ],
       "name": "one-tier",
@@ -197,11 +197,11 @@
           "value": 0
         },
         {
-          "accept": true,
-          "digest": "05170bf06093424550e0e36888be32331e666ab9b2bde56b14b5f1b7ac275abc",
+          "accept": false,
+          "digest": "90c788aa52bed8d5b5d39075af76e7cd5370d7033652119bf9fff1a7b79d9380",
           "name": "column-length",
           "offset": 496,
-          "value": 0
+          "value": 1
         }
       ],
       "name": "two-tier",

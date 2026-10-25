@@ -1,15 +1,10 @@
 package leanvmclaims
 
 import (
-	"compress/gzip"
-	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"io"
-	"os"
-	"path/filepath"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"sync"
 	"testing"
 
@@ -28,45 +23,10 @@ func loadFixtures(t testing.TB) fixtures {
 }
 func loadFixtureSet(t testing.TB, base string, expectedPin string, config ClassConfig) fixtures {
 	t.Helper()
-	var manifest struct {
-		Pin   string `json:"upstream_commit"`
-		Files map[string]struct {
-			Bytes int
-			Hash  string `json:"sha256"`
-		}
-	}
-	b, err := os.ReadFile(filepath.Join(base, "provenance.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &manifest); err != nil {
-		t.Fatal(err)
-	}
-	if manifest.Pin != UpstreamCommit || len(manifest.Files) != 12 {
-		t.Fatal("invalid root fixture provenance")
-	}
-	f := fixtures{files: make(map[string][]byte), config: config}
-	for name, e := range manifest.Files {
-		file, err := os.Open(filepath.Join(base, name+".gz"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		gz, err := gzip.NewReader(file)
-		if err != nil {
-			file.Close()
-			t.Fatal(err)
-		}
-		raw, err := io.ReadAll(io.LimitReader(gz, int64(e.Bytes)+1))
-		gz.Close()
-		file.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-		sum := sha256.Sum256(raw)
-		if len(raw) != e.Bytes || hex.EncodeToString(sum[:]) != e.Hash {
-			t.Fatalf("corrupt fixture %s", name)
-		}
-		f.files[name] = raw
+	_, files := fixture.Load(t, base, UpstreamCommit, 12)
+	f := fixtures{files: files, config: config}
+	if configJSON, ok := files["class-config.json"]; ok {
+		fixture.JSONBytes(t, configJSON, &f.config)
 	}
 	pin, err := hex.DecodeString(expectedPin)
 	if err != nil {
@@ -103,13 +63,7 @@ func replayVerdicts(t *testing.T, f fixtures, path string) {
 			}
 		}
 	}
-	b, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err = json.Unmarshal(b, &vectors); err != nil {
-		t.Fatal(err)
-	}
+	fixture.JSON(t, path, &vectors)
 	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != 3 {
 		t.Fatal("stale root verdicts")
 	}
@@ -266,7 +220,7 @@ func BenchmarkVerifySealed(b *testing.B) {
 }
 
 func loadTierFixtures(t testing.TB) fixtures {
-	return loadFixtureSet(t, "testdata/tiers", "325f58be52f490b65215f80ad7a6da899f91d252db7edcadd4bb97f1d2432579", ClassConfig{LogBytecode: 12, LogRAM: 4, LogAdvice: 4, ImageWords: 1, LeafHeights: [11]uint64{4, 4, 4, 5, 5, 4, 4, 4, 4, 3, 3}, LeafRate: 1, Arity0: 2, Arity: 2, TreeRate: 1, Claims: 8, Groups: 4, Small: &SmallTier{Arity: 2, Claims: 4, Groups: 2}})
+	return loadFixtureSet(t, "testdata/tiers", "325f58be52f490b65215f80ad7a6da899f91d252db7edcadd4bb97f1d2432579", ClassConfig{})
 }
 func TestFirstSmallAndWide(t *testing.T) {
 	f := loadTierFixtures(t)

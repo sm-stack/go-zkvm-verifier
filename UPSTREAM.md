@@ -28,9 +28,9 @@ Copied sources:
 
 `op-node/rollup/derive/dependency_scanner.go` and `dependency_leanvm_test.go`
 were inspected for integration context, not copied. They test aggregate and
-chain policy outside standalone proof verification. No shared arithmetic was
-introduced: leanVM's binary field and SP1's KoalaBear machinery have different
-semantics. Existing source comments were retained except stale integration,
+chain policy outside standalone proof verification. leanVM and SP1 arithmetic
+remain separate because their binary-field and KoalaBear machinery have different
+semantics. The two leanVM verifiers share `internal/gf2`. Existing source comments were retained except stale integration,
 package and generation instructions; original files had no individual license
 headers to remove. New CLI, examples, robustness tests, provenance checks and CI
 are local additions. No protocol-level fix was needed by the observed corpus.
@@ -185,8 +185,10 @@ Go CI requires no Rust. The reference CI runs the same comparison.
 
 ## Local performance implementations
 
-`leanvm/clmul_arm64.s` implements the pinned GF(2^64) reduction polynomial and
-six-product GF(2^192) multiplication using Go PMULL assembly. CPU dispatch, portable fallback and
+`internal/gf2/clmul_arm64.s` implements the pinned GF(2^64) reduction polynomial and
+six-product GF(2^192) multiplication using Go PMULL assembly. Both leanVM
+verifiers use this shared backend: their base-field polynomial, extension
+polynomial and three-limb coefficient order are identical. CPU dispatch, portable fallback and
 `purego` builds preserve the same field operations and program digests. No
 assembly is called without PMULL detection. amd64 currently uses Go fallback.
 

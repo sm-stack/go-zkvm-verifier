@@ -28,9 +28,15 @@ and reuse the immutable verifier concurrently. Constructor input bytes and the
 small-tier configuration are copied. Proof inputs must remain unchanged while
 `VerifySealed` reads them. Errors wrap `leanvmclaims.ErrClass` or `leanvmclaims.ErrProof`.
 
-Supported: plain mixed-tree first-level roots, small nodes, large/Wide nodes and
-wraps; one- and two-tier classes; root claims and fixed-polynomial seals.
-Runtime code is Go, without Rust or CGO. Leaf proof verification, proving,
+Supported: plain mixed-tree roots and wraps; one- and two-tier classes;
+root claims and fixed-polynomial seals. A **first-level** root aggregates leaf
+execution proofs. A **small-node** root aggregates child roots using the optional
+smaller-capacity tier. **Wide** is the fork's name for the large tier, which has
+the class's full claim/group capacities. A wrap carries an existing root into
+the large-tier statement.
+Runtime code is Go, without Rust or CGO. Field arithmetic shares the standalone
+verifier's arm64 PMULL backend and portable fallback; `-tags purego` selects the
+fallback. Leaf proof verification, proving,
 circuit building, zero-knowledge leaves, same-program trees and formal
 verification are outside this package's scope. It is not interchangeable with
 the `leanvm` package's ELF/LVMP verifier.
@@ -47,7 +53,20 @@ Roots use `LVMT` version 20. Seals use the exact framed
 The full path verifies the root's transcript, flock reduction, GKR bus balance,
 table constraints, witness openings and EOF; it then settles the carried matrix
 claims and fixed-polynomial openings. Claim-set ordering/capacities and digest
-binding are required. No component success alone accepts a root.
+binding are required.
+
+The CLI's `-class` JSON uses the `ClassConfig` field names: `LogBytecode`,
+`LogRAM`, `LogAdvice`, `ImageWords`, `LeafHeights`, `LeafRate`, `Arity0`, `Arity`,
+`TreeRate`, `Claims`, `Groups`, and optional `Small` with `Arity`, `Claims`,
+`Groups`. Class keys, roots, claims and seals are raw binary files.
+
+The CLI authenticates the class key before reading root, claims and seal.
+Its input paths must name regular files, and reads are bounded by their observed
+file sizes. Device streams are usage errors (exit 2). Invalid class configuration,
+class key or trusted digest also exits 2.
+Only root/claims/seal rejection exits 1. There is no default maximum regular-file size;
+deployments must enforce their own resource budget. These CLI transport rules
+do not change the library's proof acceptance rules.
 
 ## Limits and security assumptions
 
@@ -64,12 +83,10 @@ and `sp1` subcommands retain their separately documented limits. CLI input files
 are raw upstream encodings; gzip is only fixture storage.
 
 See the repository [security assumptions](../../README.md#security-assumptions-and-limits).
-The scalar field code is portable Go.
 
 ## Fixtures and provenance
 
-All test inputs ship in this repository; none depends on another workspace or
-`.context`. Missing fixtures fail tests.
+All test inputs ship in this repository. Missing fixtures fail tests.
 
 - `one-tier.key.gz`, `two-tier.key.gz`: **loader-only zero-column derivatives**
   of real Rust setup keys (20/40 MB raw, about 20/40 KB compressed). They test
@@ -84,7 +101,6 @@ All test inputs ship in this repository; none depends on another workspace or
   child fails recursion verification; the wrap has a valid recursion proof but
   fails its Wide seal. The helper's arity parameter is generalized from 3 to the
   design's arity (2), so it reuses `tiers/`'s identical authenticated class key.
-  No verifier/prover method or upstream assertion is weakened.
 - Component JSONs contain Rust transcript/field/wire/Merkle vectors, seven actual
   PCS proofs, three actual flock reductions and their returned claims.
   `matrices.json` has 63 bilinear and 63 flock matrix-form probes;
@@ -98,7 +114,7 @@ uncompressed sizes/SHA-256 hashes. `artifacts.json` also inventories compressed
 files and generated runtime data. Fixtures retain upstream MIT licensing;
 ported flock/PCS attribution and MIT/Apache notices are in `NOTICE` and
 `LICENSES/`. Generated circuit/table metadata is about 3 MB, exported from the
-pinned source rather than manually transcribed.
+pinned source.
 
 ## Reproduction
 
@@ -121,8 +137,8 @@ python3 tools/leanvm-mixed/regenerate.py --check
 Explicit proof generation uses two workers and is more expensive:
 
 ```sh
-python3 tools/leanvm-mixed/regenerate.py --export-proofs .context/mixed/proofs
-python3 tools/leanvm-mixed/pack_proofs.py .context/mixed/proofs --check
+python3 tools/leanvm-mixed/regenerate.py --export-proofs /tmp/leanvm-claims-proofs
+python3 tools/leanvm-mixed/pack_proofs.py /tmp/leanvm-claims-proofs --check
 python3 tools/leanvm-mixed/generate_tiers.py --check
 python3 tools/leanvm-mixed/generate_forgery.py --check
 ```
@@ -141,7 +157,7 @@ forgery adjustments are recorded in its manifest.
 | `internal/classkey` | `rec/tree/embed.rs`, `design.rs`, `mixed.rs`, program key digest |
 | `internal/machine` | `rec/layout.rs`, `rec/fixed.rs`, `cpu/layout.rs`, flock circuit gates, rec slot/identity forms |
 | `internal/transcript`, `internal/blake` | `fiat_shamir` duplex/session/proof/POW |
-| `internal/field` | `primitives/field/gf2_64.rs`, `gf2_192.rs` |
+| `../../internal/gf2`, `internal/field` | `primitives/field/gf2_64.rs`, `gf2_192.rs` |
 | `internal/wire` | `rec/tree/proof.rs`, `multiset.rs` |
 | `internal/pcs` | Merkle, WHIR, stacked point/ring openings |
 | `internal/flock` | zerocheck, skip domain, deferred lincheck and matrix settlement |
@@ -150,4 +166,20 @@ forgery adjustments are recorded in its manifest.
 | `verifier.go` | checked mixed class load + `verify_claims_sealed` |
 
 Benchmarks: `go test ./experimental/leanvmclaims -run '^$' -bench 'ClassLoad|VerifySealed' -benchmem`.
-See `PERFORMANCE.md` for measured samples and their limitations.
+See [PERFORMANCE.md](../../PERFORMANCE.md) for measured samples and their limitations.
+
+
+## Reviewing generated constraints
+
+`internal/machine/metadata-review.json` summarizes each circuit's dimensions,
+gate counts by kind and gate digest, plus the layout constants and table digest.
+It is generated alongside the embedded metadata. For an offline consistency check:
+
+```sh
+python3 tools/leanvm-mixed/export_metadata.py --summary-only --check
+```
+
+A changed digest identifies the circuits that need review; it does not establish
+that their gates are correct. Review the pinned upstream source and exporter
+changes, then run `export_metadata.py --check` to compare the Rust export.
+The compact runtime metadata remains the complete constraint representation.

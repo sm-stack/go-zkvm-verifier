@@ -2,11 +2,8 @@
 use leanvm::aggregate::{Capacity, ClaimShape, LeafShape, ProgramClass, Tier, Tree, TreeShape};
 use leanvm::asm::{Asm, Reg};
 use leanvm::{Program, Rate, VerifyingKey};
+use leanvm_mixed_reference::{PIN, hex};
 use std::{io::Write, path::Path};
-const PIN: &str = "da5c964831c993b011464e4fd4a573b7172d5295";
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|v| format!("{v:02x}")).collect()
-}
 fn main() {
     parallel::init_with_threads(std::num::NonZeroUsize::new(2).unwrap()).unwrap();
     let out = std::env::args().nth(1).expect("output directory");
@@ -150,10 +147,15 @@ fn main() {
             ("seal-rate", descriptor_end - 8, 0),
             ("root-count", descriptor_end, 0),
             ("column-count", first_circuit + 56, 0),
-            ("column-length", first_circuit + 64, 0),
+            (
+                "column-length",
+                first_circuit + 64,
+                key[first_circuit + 64] ^ 1,
+            ),
         ] {
             let mut bytes = key.clone();
             bytes[at] = value;
+            assert_ne!(bytes, key, "ineffective mutation: {label}");
             let d = Tree::mixed_class_key_digest(&bytes);
             let accepted = Tree::mixed_from_bytes(class, shape, &bytes, &d).is_ok();
             cases.push(serde_json::json!({"name":label,"offset":at,"value":value,"accept":accepted,"digest":hex(&d)}));

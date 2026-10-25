@@ -130,25 +130,25 @@ func (t *transcript) nextRoot() ([32]byte, error) {
 // round whose eq factor r was factored out (c0 + r (c1 + ...) = claim).
 func (t *transcript) roundPoly(count int, claim ext, eqFactor *ext) ([]ext, error) {
 	coeffs := make([]ext, count)
+	missing := 0
 	if eqFactor == nil {
-		c0, err := t.nextScalar()
+		missing = 1
+	}
+	for i := range coeffs {
+		if i == missing {
+			continue
+		}
+		x, err := t.nextScalar()
 		if err != nil {
 			return nil, err
 		}
-		tail, err := t.nextScalars(count - 2)
-		if err != nil {
-			return nil, err
-		}
-		coeffs[0], coeffs[1] = c0, claim.add(sumExt(tail))
-		copy(coeffs[2:], tail)
-		return coeffs, nil
+		coeffs[i] = x
 	}
-	tail, err := t.nextScalars(count - 1)
-	if err != nil {
-		return nil, err
+	if eqFactor == nil {
+		coeffs[1] = claim.add(sumExt(coeffs[2:]))
+	} else {
+		coeffs[0] = claim.add(eqFactor.mul(sumExt(coeffs[1:])))
 	}
-	coeffs[0] = claim.add(eqFactor.mul(sumExt(tail)))
-	copy(coeffs[1:], tail)
 	return coeffs, nil
 }
 

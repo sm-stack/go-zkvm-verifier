@@ -5,7 +5,6 @@ Only pinned Rust creates proof/key/config bytes. Python packages and hashes them
 --from-directory packages a completed run without repeating expensive proving.
 """
 import argparse
-import gzip
 import hashlib
 import json
 import os
@@ -13,8 +12,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-ROOT=Path(__file__).resolve().parents[2]
-PIN='da5c964831c993b011464e4fd4a573b7172d5295'
+from common import ROOT, PIN, checkout, write_gzip, write_manifest
 p=argparse.ArgumentParser()
 p.add_argument('--check',action='store_true')
 p.add_argument('--from-directory',type=Path)
@@ -30,16 +28,7 @@ with tempfile.TemporaryDirectory(prefix='mixed-tiers-') as tmp:
         raw=(source/name).read_bytes()
         manifest['files'][name]={'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
         path=target/(name+'.gz')
-        if a.check:
-            if gzip.decompress(path.read_bytes())!=raw:
-                raise SystemExit(f'tier fixture differs: {name}')
-        else:
-            path.parent.mkdir(parents=True,exist_ok=True)
-            path.write_bytes(gzip.compress(raw,mtime=0))
+        write_gzip(path, raw, a.check)
     path=target/'provenance.json'
-    if a.check:
-        if json.loads(path.read_text())!=manifest:
-            raise SystemExit('tier provenance differs')
-    else:
-        path.write_text(json.dumps(manifest,indent=2)+'\n')
+    write_manifest(path, manifest, a.check)
 print('verified/packaged 12 two-tier upstream artifacts')

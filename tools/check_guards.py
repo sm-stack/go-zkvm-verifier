@@ -11,6 +11,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 CASES = [
+    ('jagged.go', 'checkedPrefixSum >= 1<<30', 'TestJaggedTotalAreaBound'),
     ('verifier.go', 'hashFelts(pv[:pvNumHashed]) != digest(pv[pvDigest:pvDigest+digestSize])', 'TestCompressedBindings'),
     ('verifier.go', 'digest(pv[pvVkRoot:pvVkRoot+digestSize]) != vkMerkleRoot', 'TestCompressedBindings'),
     ('verifier.go', 'pv[pvIsComplete] != 1', 'TestCompressedBindings'),
@@ -47,15 +48,34 @@ def check_mutation(original, old, new, package, test):
             raise SystemExit(f'mutation survived or failed to build: {original}: {old}')
     print(f'caught {original.name}: {old.splitlines()[0]}', flush=True)
 
+CLAIMS = 'experimental/leanvmclaims/internal/'
+MIXED_CASES = [
+ ('recursion/arith.go', 'if expected != claim {', 'if false && expected != claim {', 'recursion', 'TestGKRLayerBindings'),
+ ('recursion/arith.go', 'if prods[0].Add(lambda.Mul(prods[1])) != claim {', 'if false && prods[0].Add(lambda.Mul(prods[1])) != claim {', 'recursion', 'TestGKRLayerBindings'),
+ ('flock/reduction.go', 'if terminal != claim {', 'if false && terminal != claim {', 'flock', 'TestZerocheckTerminalBinding'),
+ ('transcript/verifier.go', 'return v.fail(ErrPOW)', 'return nil', 'transcript', 'TestPOWBinding'),
+ ('pcs/merkle.go', 'return nil, v.InvalidHint()', 'return nil, nil', 'pcs', 'TestReadRowsAuthentication'),
+ ('recursion/verify.go', 'if err = v.EOF(); err != nil {', 'if false {', 'recursion', 'TestRootEOFBinding'),
+ ('recursion/verify.go', 'return replay[0].Matrix.Check(hash, make([]E, len(hash.Gates)))', 'return nil', 'recursion', 'TestHashMatrixBinding'),
+ ('recursion/verify.go', 'tier = 1', 'tier = 0', 'recursion', 'TestTierLayoutSelection'),
+ ('recursion/verify.go', 'tier := 0', 'tier := 1', 'recursion', 'TestTierLayoutSelection'),
+]
+# Every entry uses (source, replacement site, replacement, package, regression).
+mutations = [('sp1/'+file, 'if '+condition+' {', 'if false && ('+condition+') {', './sp1', test)
+             for file, condition, test in CASES]
+mutations += [
+    ('leanvm/elf.go', 'if segments[i-1].end > segments[i].start {',
+     'if false && segments[i-1].end > segments[i].start {', './leanvm', 'TestRejectOverlappingSegmentsBeforeCopy'),
+    ('leanvm/elf.go', 'tableKey{strOffset, strSize, offset % entsize}',
+     'tableKey{0, 0, offset % entsize}', './leanvm', 'TestSymbolCacheSeparatesStrings'),
+]
+mutations += [(CLAIMS+file, old, new, './'+CLAIMS+package, test)
+              for file, old, new, package, test in MIXED_CASES]
 # A pre-existing failing regression must never count as a caught mutation.
-baseline = sorted({test for _, _, test in CASES} | {'TestRejectOverlappingSegmentsBeforeCopy', 'TestSymbolCacheSeparatesStrings'})
-subprocess.run(['go', 'test', '-p', '1', '-count=1', './sp1', './leanvm',
-                '-run', '^('+'|'.join(baseline)+')$'], cwd=ROOT, env=env, check=True)
-
-for file, condition, test in CASES:
-    check_mutation(ROOT/'sp1'/file, 'if '+condition+' {', 'if false && ('+condition+') {', './sp1', test)
-check_mutation(ROOT/'leanvm/elf.go', 'if segments[i-1].end > segments[i].start {',
-               'if false && segments[i-1].end > segments[i].start {', './leanvm', 'TestRejectOverlappingSegmentsBeforeCopy')
-check_mutation(ROOT/'leanvm/elf.go', 'tableKey{strOffset, strSize, offset % entsize}',
-               'tableKey{0, 0, offset % entsize}', './leanvm', 'TestSymbolCacheSeparatesStrings')
-print(f'caught all {len(CASES)+2} guard mutations')
+for package in sorted({case[3] for case in mutations}):
+    tests = sorted({case[4] for case in mutations if case[3] == package})
+    subprocess.run(['go', 'test', '-p', '1', '-count=1', package,
+                    '-run', '^('+'|'.join(tests)+')$'], cwd=ROOT, env=env, check=True)
+for file, old, new, package, test in mutations:
+    check_mutation(ROOT/file, old, new, package, test)
+print(f'caught all {len(mutations)} guard mutations')

@@ -1,4 +1,8 @@
 {
+  "experimental/leanvmclaims/internal/machine/metadata-review.json": {
+    "bytes": 8044,
+    "sha256": "1240c7e3d1d15fa585ce907e3cf30fd88e73c1e0efa29019e045b3bb5682cf66"
+  },
   "experimental/leanvmclaims/internal/machine/metadata.json": {
     "bytes": 3241152,
     "sha256": "27e251942640ebff3d8b4cb20f2ea752bd8842f6d56433582ecde4f7893996c9"
@@ -8,8 +12,8 @@
     "sha256": "480beb8b85888b6eabd1a01578db712e6f6892962d95d989c9d519c915e6f219"
   },
   "experimental/leanvmclaims/testdata/classes.json": {
-    "bytes": 9860,
-    "sha256": "34dfc3e64f7112fac9ddcbe6eba0e8497906b659cb3ed5360ea2448c874de00c"
+    "bytes": 9862,
+    "sha256": "c272b5f074b63aa82c2187555a88b278feceec11e287205ed85887dc49e1eced"
   },
   "experimental/leanvmclaims/testdata/field.json": {
     "bytes": 201805,
@@ -220,8 +224,8 @@
     "sha256": "4ae760620249c639130c30eb3e124a9c15c58a6d4fd8a09182e1f868d68a3189"
   },
   "sp1/compress_machine_gen.go": {
-    "bytes": 70670,
-    "sha256": "cb4e4cd0cd2911fb6ebf9c8e648652c824b8032f501f5df04f192f66f40ec4ad"
+    "bytes": 62699,
+    "sha256": "c5d834ed093a176828915493bab1b9ed2ab782aff58b09ec235e5ff5f6590cc9"
   },
   "sp1/poseidon2_fast_gen.go": {
     "bytes": 7209,

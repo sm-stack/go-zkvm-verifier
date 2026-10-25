@@ -1,7 +1,7 @@
 // Package classkey decodes authenticated class-key containers for the mixed port.
 // Mirrors rec/tree/embed.rs: digest, descriptor framing and Words decoding at Pin.
-// This is only the wire layer: Design::new, RecLayout and CircuitKey semantic
-// validation must run before a decoded key can become a ClassVerifier.
+// Decode checks the container; Load additionally validates the class design,
+// recursion layout and circuit keys before constructing reusable verifier data.
 package classkey
 
 import (
@@ -14,8 +14,8 @@ import (
 const Pin = "da5c964831c993b011464e4fd4a573b7172d5295"
 const Domain = "leanvm/mixed-class-key/v1"
 
-var ErrDigest = errors.New("mixed: class-key digest mismatch")
-var ErrEncoding = errors.New("mixed: malformed class-key encoding")
+var ErrDigest = errors.New("leanvmclaims: class-key digest mismatch")
+var ErrEncoding = errors.New("leanvmclaims: malformed class-key encoding")
 
 // Digest uses upstream's exact unkeyed, unframed BLAKE2s domain separation.
 func Digest(data []byte) [32]byte {
@@ -35,7 +35,6 @@ type Circuit struct {
 }
 type Key struct {
 	Digest      [32]byte
-	Descriptor  []byte
 	Roots       [][32]byte
 	Placeholder [32]byte
 	Heights     [][6]uint64
@@ -92,6 +91,7 @@ func (r *reader) heights() (h [6]uint64) {
 // and including seal rate. It is not a self-authenticating trust root.
 // No columns are expanded; one owned byte copy prevents later caller mutation.
 func Decode(data []byte, pin [32]byte, expectedDescriptor []byte) (*Key, error) {
+	data = bytes.Clone(data)
 	if Digest(data) != pin {
 		return nil, ErrDigest
 	}
@@ -131,7 +131,7 @@ func Decode(data []byte, pin [32]byte, expectedDescriptor []byte) (*Key, error) 
 	if r.word() != tiers {
 		return nil, ErrEncoding
 	}
-	k := &Key{Digest: pin, Descriptor: bytes.Clone(desc), Roots: make([][32]byte, int(tiers)), Heights: make([][6]uint64, int(tiers))}
+	k := &Key{Digest: pin, Roots: make([][32]byte, int(tiers)), Heights: make([][6]uint64, int(tiers))}
 	for i := range k.Roots {
 		copy(k.Roots[i][:], r.take(32))
 	}
@@ -191,6 +191,6 @@ func Decode(data []byte, pin [32]byte, expectedDescriptor []byte) (*Key, error) 
 	if r.err != nil || r.pos != len(data) {
 		return nil, ErrEncoding
 	}
-	k.data = bytes.Clone(data)
+	k.data = data
 	return k, nil
 }

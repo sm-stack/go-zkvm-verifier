@@ -10,24 +10,28 @@ import (
 	"math/bits"
 )
 
+var ErrPOW = errors.New("leanvmclaims: insufficient proof of work")
+var ErrTrailing = errors.New("leanvmclaims: unread transcript bytes")
+var ErrHint = errors.New("leanvmclaims: unauthenticated hint")
+
 // Proof borrows immutable input bytes. Hints are framed but are not transcript
 // messages: the protocol must authenticate each hint before using its contents.
 type Proof struct{ Messages, Hints []byte }
 
 func Decode(data []byte) (Proof, error) {
 	if len(data) < 8 {
-		return Proof{}, errors.New("mixed: missing transcript length")
+		return Proof{}, errors.New("leanvmclaims: missing transcript length")
 	}
 	n := binary.LittleEndian.Uint64(data[:8])
 	data = data[8:]
 	if n > uint64(len(data)) {
-		return Proof{}, errors.New("mixed: truncated transcript messages")
+		return Proof{}, errors.New("leanvmclaims: truncated transcript messages")
 	}
 	p := Proof{data[:int(n)], data[int(n):]}
 	for rest := p.Hints; len(rest) != 0; {
 		_, tail, ok := takeHint(rest)
 		if !ok {
-			return Proof{}, errors.New("mixed: malformed transcript hints")
+			return Proof{}, errors.New("leanvmclaims: malformed transcript hints")
 		}
 		rest = tail
 	}
@@ -54,7 +58,7 @@ type Verifier struct {
 
 func NewVerifier(session [32]byte, instance []byte, proof Proof) (*Verifier, error) {
 	if len(instance) == 0 {
-		return nil, errors.New("mixed: empty transcript instance")
+		return nil, errors.New("leanvmclaims: empty transcript instance")
 	}
 	v := &Verifier{sponge: New(session), messages: proof.Messages, hints: proof.Hints}
 	v.sponge.Absorb(instance)
@@ -75,7 +79,7 @@ func (v *Verifier) Read(n int) ([]byte, error) {
 		return nil, v.err
 	}
 	if n < 0 || n > len(v.messages) {
-		return nil, v.fail(fmt.Errorf("mixed: message %d is truncated", v.messagesRead))
+		return nil, v.fail(fmt.Errorf("leanvmclaims: message %d is truncated", v.messagesRead))
 	}
 	data := v.messages[:n]
 	v.sponge.Absorb(data)
@@ -89,13 +93,13 @@ func (v *Verifier) Hint() ([]byte, error) {
 	}
 	head, tail, ok := takeHint(v.hints)
 	if !ok {
-		return nil, v.fail(fmt.Errorf("mixed: hint %d is truncated", v.hintsRead))
+		return nil, v.fail(fmt.Errorf("leanvmclaims: hint %d is truncated", v.hintsRead))
 	}
 	v.hints = tail
 	v.hintsRead++
 	return head, nil
 }
-func (v *Verifier) InvalidHint() error { return v.fail(errors.New("mixed: unauthenticated hint")) }
+func (v *Verifier) InvalidHint() error { return v.fail(ErrHint) }
 func (v *Verifier) Draw(out []byte) error {
 	if v.err != nil {
 		return v.err
@@ -110,7 +114,7 @@ func (v *Verifier) CheckPOW(difficulty uint32) error {
 		return nil
 	}
 	if difficulty > 63 {
-		return v.fail(errors.New("mixed: invalid proof-of-work difficulty"))
+		return v.fail(errors.New("leanvmclaims: invalid proof-of-work difficulty"))
 	}
 	var block [64]byte
 	if err := v.Draw(block[:32]); err != nil {
@@ -124,7 +128,7 @@ func (v *Verifier) CheckPOW(difficulty uint32) error {
 	copy(block[56:], "FS-POW-1")
 	digest := blake2s.Sum256(block[:])
 	if bits.LeadingZeros64(binary.LittleEndian.Uint64(digest[:8])) < int(difficulty) {
-		return v.fail(errors.New("mixed: insufficient proof of work"))
+		return v.fail(ErrPOW)
 	}
 	return nil
 }
@@ -133,7 +137,7 @@ func (v *Verifier) EOF() error {
 		return v.err
 	}
 	if len(v.messages) != 0 || len(v.hints) != 0 {
-		return fmt.Errorf("mixed: unread transcript bytes (%d messages, %d hints)", len(v.messages), len(v.hints))
+		return fmt.Errorf("%w (%d messages, %d hints)", ErrTrailing, len(v.messages), len(v.hints))
 	}
 	return nil
 }

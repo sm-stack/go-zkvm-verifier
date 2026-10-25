@@ -290,3 +290,19 @@ func TestMerkleBatchErrorOrder(t *testing.T) {
 	o.values.data[0] = 8
 	require.ErrorIs(t, verifyMerkleOpenings(commitment, indices, o, 1, depth), errMerkleRoot)
 }
+
+// The early total-area bound makes the later ordinary area arithmetic safe.
+// Requiring this specific rejection keeps later shape failures from masking it.
+func TestJaggedTotalAreaBound(t *testing.T) {
+	for _, area := range []uint64{1 << 30, 1<<30 + 1, fieldOrder - 1} {
+		p := jaggedProof{
+			rowColCounts:   [][][2]uint64{{{area, 1}, {0, 0}, {0, 1}}, {{0, 0}, {0, 1}}},
+			commitments:    make([]digest, numCommitments),
+			maxLogRowCount: maxLogRowCount,
+			logM:           29,
+		}
+		err := verifyJagged(make([]digest, numCommitments), make([]ext, maxLogRowCount),
+			[][]ext{{extZero}, nil}, &p, &challenger{})
+		require.ErrorIs(t, err, errJaggedAreaBounds)
+	}
+}

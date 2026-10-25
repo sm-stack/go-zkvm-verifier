@@ -13,7 +13,7 @@ import (
 	"slices"
 )
 
-var ErrOpening = errors.New("mixed: malformed or unauthenticated Merkle opening")
+var ErrOpening = errors.New("leanvmclaims: malformed or unauthenticated Merkle opening")
 
 type merkleNode struct {
 	index uint64

@@ -2,19 +2,10 @@ package wire
 
 import (
 	"encoding/hex"
-	"encoding/json"
-	"os"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
 
-func unhex(t *testing.T, s string) []byte {
-	t.Helper()
-	b, e := hex.DecodeString(s)
-	if e != nil {
-		t.Fatal(e)
-	}
-	return b
-}
 func TestRustWire(t *testing.T) {
 	var v struct {
 		Pin    string `json:"upstream_commit"`
@@ -30,18 +21,12 @@ func TestRustWire(t *testing.T) {
 			Accept bool
 		}
 	}
-	b, e := os.ReadFile("../../testdata/wire.json")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if e = json.Unmarshal(b, &v); e != nil {
-		t.Fatal(e)
-	}
+	fixture.JSON(t, "../../testdata/wire.json", &v)
 	if v.Pin != "da5c964831c993b011464e4fd4a573b7172d5295" {
 		t.Fatal("stale pin")
 	}
 	for i, c := range v.Claims {
-		data := unhex(t, c.Bytes)
+		data := fixture.Hex(t, c.Bytes)
 		claims, e := DecodeClaims(data)
 		if e != nil {
 			t.Fatal(e)
@@ -65,7 +50,7 @@ func TestRustWire(t *testing.T) {
 		}
 	}
 	for i, c := range v.Roots {
-		data := unhex(t, c.Bytes)
+		data := fixture.Hex(t, c.Bytes)
 		r, e := DecodeRoot(data)
 		if (e == nil) != c.Accept {
 			t.Fatalf("root %d differs: %v", i, e)

@@ -12,7 +12,7 @@ import (
 )
 
 func tables(r *reader, b busResult, layout *machine.Layout, s *machine.Schema) ([]pcs.PointClaim, error) {
-	xi := r.draw()
+	xi := r.DrawElement()
 	claim := b.totals[0].Add(xi.Mul(b.totals[1]))
 	n := 0
 	for _, h := range layout.Heights[:5] {
@@ -25,8 +25,8 @@ func tables(r *reader, b busResult, layout *machine.Layout, s *machine.Schema) (
 	weights := [5]E{one, one, one, one, one}
 	for m := n - 1; m >= 0; m-- {
 		claim, chi[m] = r.round(4, claim, nil)
-		if r.err != nil {
-			return nil, r.err
+		if r.Err != nil {
+			return nil, r.Err
 		}
 		for t := range weights {
 			if layout.Heights[t] > m {
@@ -41,9 +41,9 @@ func tables(r *reader, b busResult, layout *machine.Layout, s *machine.Schema) (
 	global := 1
 	var points []pcs.PointClaim
 	for t, table := range s.RecTables {
-		cols := r.many(table.Columns, false)
-		if r.err != nil {
-			return nil, r.err
+		cols := r.Elements(table.Columns, false)
+		if r.Err != nil {
+			return nil, r.Err
 		}
 		own := b.forms[0][t].value(cols).Add(xi.Mul(b.forms[1][t].value(cols)))
 		for _, id := range table.Identities {
@@ -65,12 +65,20 @@ func tables(r *reader, b busResult, layout *machine.Layout, s *machine.Schema) (
 	if residual != (E{}) {
 		return nil, ErrProof
 	}
-	return points, r.err
+	return points, r.Err
 }
 
 // Verify authenticates the recursion proof and its HASH matrix claim. Carried
 // tree matrix claims, claims digest, and seal are separate caller obligations.
 func Verify(k *classkey.Validated, root wire.Root) error {
+	schema, err := machine.Load()
+	if err != nil {
+		return err
+	}
+	return verifyWithSchema(k, root, schema)
+}
+
+func verifyWithSchema(k *classkey.Validated, root wire.Root, schema *machine.Schema) error {
 	position, err := settlement.Position(k, root)
 	if err != nil {
 		return err
@@ -80,10 +88,6 @@ func Verify(k *classkey.Validated, root wire.Root) error {
 		tier = 1
 	}
 	layout := k.Layouts[tier]
-	schema, err := machine.Load()
-	if err != nil {
-		return err
-	}
 	v, err := transcript.NewVerifier(k.RootSession, root.Instance(), root.Proof)
 	if err != nil {
 		return err
@@ -98,7 +102,7 @@ func Verify(k *classkey.Validated, root wire.Root) error {
 	if err != nil {
 		return err
 	}
-	r := reader{v: v}
+	r := reader{FieldReader: transcript.FieldReader{Verifier: v}}
 	balance, err := bus(&r, k, root, position, layout, schema)
 	if err != nil {
 		return err

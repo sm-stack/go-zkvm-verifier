@@ -3,6 +3,9 @@ package flock
 
 import "github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
 
+const skipLog = 6
+const skipSize = 1 << skipLog
+
 // phi_8 basis from primitives/src/field/gf2_8.rs at the pinned revision.
 var phiBasis = [8]uint64{1, 0x033ce8beddc8a656, 0x512620375ed2a108, 0x0c9e636090aafc01, 0xba4f3cd82801769c, 0xba26e7904adb4a47, 0x467698598926dc01, 0x4418ae808b28bdd0}
 

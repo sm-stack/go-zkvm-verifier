@@ -4,12 +4,10 @@ import argparse
 import json
 import os
 from pathlib import Path
-import subprocess
 import sys
 import tempfile
 
-ROOT = Path(__file__).resolve().parents[2]
-PIN = 'da5c964831c993b011464e4fd4a573b7172d5295'
+from common import ROOT, PIN, checkout, run as run_reference
 p = argparse.ArgumentParser()
 p.add_argument('--check', action='store_true', help='compare compact loader vectors without modifying them')
 p.add_argument('--export-proofs', type=Path, help='generate real proofs and the large class key using the pinned upstream example')
@@ -18,17 +16,12 @@ if a.check and a.export_proofs:
     p.error('--check and --export-proofs are separate operations')
 env = dict(os.environ, CARGO_BUILD_JOBS='2', RAYON_NUM_THREADS='2', PWD=str(ROOT))
 def run(cmd, **kw):
-    return subprocess.run(cmd, env=env, check=True, **kw)
+    return run_reference(cmd, env=env, **kw)
 if a.export_proofs:
     # Never use or modify another local workspace. This is a disposable development checkout.
     with tempfile.TemporaryDirectory(prefix='mixed-source-') as tmp:
         source = Path(tmp)
-        run(['git', 'init', '-q', str(source)])
-        run(['git', '-C', str(source), 'fetch', '--depth=1', 'https://github.com/sm-stack/leanVM', PIN])
-        run(['git', '-C', str(source), 'checkout', '-q', '--detach', 'FETCH_HEAD'])
-        got = run(['git', '-C', str(source), 'rev-parse', 'HEAD'], stdout=subprocess.PIPE, text=True).stdout.strip()
-        if got != PIN:
-            raise SystemExit('unexpected upstream revision')
+        checkout(source)
         example = source/'crates/leanvm_core/examples/mixed_program_tree.rs'
         code = example.read_text()
         old = 'NonZeroUsize::new(16)'
@@ -47,7 +40,7 @@ if a.export_proofs:
             run([str(Path(env['CARGO_TARGET_DIR'])/'release/examples/mixed_program_tree'),
                  '--verify', str(out/name), pin], cwd=source)
         # Compare the whole real class-key digest and wire load in Go as well.
-        # This is not yet semantic class validation or Go proof verification.
+        # Full proof verification is exercised by the root-component vectors and Go tests.
         run(['go', 'run', './experimental/leanvmclaims/cmd/inspect-class-key', '-key', str(out/'class-key.bin'),
              '-digest', pin], cwd=ROOT)
         import hashlib

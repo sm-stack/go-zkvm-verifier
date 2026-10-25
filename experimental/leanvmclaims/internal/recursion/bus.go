@@ -3,6 +3,7 @@
 package recursion
 
 import (
+	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
 	"math/bits"
 	"slices"
 
@@ -97,8 +98,8 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 	if 192-bits.Len64(degree) < 140 {
 		return out, ErrProof
 	} // 128 security + 12 list bits.
-	weights := eqTable(r.many(4, true))
-	beta := r.draw()
+	weights := field.EqTable(r.Elements(4, true))
+	beta := r.DrawElement()
 	point, values, err := products(r, mu)
 	if err != nil {
 		return out, err
@@ -113,7 +114,7 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		}
 		eq, ok := eqs[height]
 		if !ok {
-			eq = eqTable(point[:height])
+			eq = field.EqTable(point[:height])
 			eqs[height] = eq
 		}
 		value := E{}
@@ -141,7 +142,7 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		}
 		acc, padding := E{}, one
 		for _, b := range blocks {
-			selector := eqBits(b.offset>>uint(b.height), point[b.height:])
+			selector := field.EqBits(b.offset>>uint(b.height), point[b.height:])
 			padding = padding.Add(selector)
 			var key E
 			if side == 0 {
@@ -174,5 +175,5 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		}
 		out.totals[side] = values[side].Add(acc).Add(padding)
 	}
-	return out, r.err
+	return out, r.Err
 }

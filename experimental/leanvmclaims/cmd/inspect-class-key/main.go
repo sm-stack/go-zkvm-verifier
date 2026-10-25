@@ -28,7 +28,7 @@ func main() {
 		fail(fmt.Errorf("digest must be 64 hex characters"))
 	}
 	// A wire-inspection tool can obtain its descriptor from authenticated bytes.
-	// The future ClassVerifier must compare a separately supplied ClassConfig.
+	// NewClassVerifier also checks a separately supplied ClassConfig.
 	if len(b) < 192 {
 		fail(classkey.ErrEncoding)
 	}

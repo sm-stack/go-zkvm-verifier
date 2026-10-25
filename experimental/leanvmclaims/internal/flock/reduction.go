@@ -3,8 +3,8 @@
 package flock
 
 import (
-	"encoding/binary"
 	"errors"
+	"fmt"
 	"slices"
 
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
@@ -16,7 +16,9 @@ import (
 type E = field.Element
 
 var one = field.One
-var ErrReduction = errors.New("mixed: flock reduction mismatch")
+var ErrReduction = errors.New("leanvmclaims: flock reduction mismatch")
+
+var ErrZerocheckTerminal = fmt.Errorf("%w: zerocheck terminal", ErrReduction)
 
 type Shape struct{ KLog, Pin, LogInstances int }
 type MatrixClaim struct {
@@ -28,63 +30,18 @@ type Replay struct {
 	Matrix MatrixClaim
 }
 
-type reader struct {
-	v   *transcript.Verifier
-	err error
-}
+type reader struct{ transcript.FieldReader }
 
-func (r *reader) element(draw bool) E {
-	if r.err != nil {
-		return E{}
-	}
-	var b []byte
-	if draw {
-		b = make([]byte, 24)
-		r.err = r.v.Draw(b)
-	} else {
-		b, r.err = r.v.Read(24)
-	}
-	if r.err != nil {
-		return E{}
-	}
-	return E{C0: binary.LittleEndian.Uint64(b), C1: binary.LittleEndian.Uint64(b[8:]), C2: binary.LittleEndian.Uint64(b[16:])}
-}
-func (r *reader) read() E { return r.element(false) }
-func (r *reader) draw() E { return r.element(true) }
-func (r *reader) many(n int, draw bool) []E {
-	out := make([]E, n)
-	for i := range out {
-		out[i] = r.element(draw)
-	}
-	return out
-}
 func (r *reader) round(claim E, eq *E) (E, E) {
-	a, b := r.read(), r.read()
+	a, b := r.ReadElement(), r.ReadElement()
 	c := a
 	if eq == nil {
 		a = claim.Add(b)
 	} else {
 		c = claim.Add(eq.Mul(a.Add(b)))
 	}
-	x := r.draw()
+	x := r.DrawElement()
 	return c.Add(x.Mul(a.Add(x.Mul(b)))), x
-}
-func eqBits(index int, point []E) E {
-	out := one
-	for i, x := range point {
-		if index>>uint(i)&1 == 0 {
-			x = x.Add(one)
-		}
-		out = out.Mul(x)
-	}
-	return out
-}
-func eqEval(a, b []E) E {
-	out := one
-	for i, x := range a {
-		out = out.Mul(one.Add(x).Add(b[i]))
-	}
-	return out
 }
 
 // Verify reduces R1CS validity to witness openings and matrix claims. Both must
@@ -102,39 +59,39 @@ func Verify(v *transcript.Verifier, shapes []Shape) ([]Replay, error) {
 		maxM = max(maxM, s.KLog+s.LogInstances)
 		maxRest = max(maxRest, s.KLog-6)
 	}
-	r := reader{v: v}
-	outer := r.many(maxM-13, true)
-	lambda := r.draw()
-	round1 := r.many(64, false)
-	z := r.draw()
-	if r.err != nil {
-		return nil, r.err
+	r := reader{FieldReader: transcript.FieldReader{Verifier: v}}
+	outer := r.Elements(maxM-13, true)
+	lambda := r.DrawElement()
+	round1 := r.Elements(skipSize, false)
+	z := r.DrawElement()
+	if r.Err != nil {
+		return nil, r.Err
 	}
-	vanish := vanishing(z, 64)
+	vanish := vanishing(z, skipSize)
 	claim := firstRound(z, vanish, round1)
 	coordinates := append(slices.Clone(fixedChallenges[:]), outer...)
 	mlv := make([]E, len(coordinates))
 	for i, eq := range coordinates {
 		claim, mlv[i] = r.round(claim, &eq)
-		if r.err != nil {
-			return nil, r.err
+		if r.Err != nil {
+			return nil, r.Err
 		}
 	}
 	evals := make([][3]E, len(shapes))
 	terminal, weight := E{}, one
 	for i := range evals {
-		a, b, c := r.read(), r.read(), r.read()
+		a, b, c := r.ReadElement(), r.ReadElement(), r.ReadElement()
 		evals[i] = [3]E{a, b, c}
 		terminal = terminal.Add(weight.Mul(a.Mul(b).Add(c)))
 		weight = weight.Mul(lambda)
 	}
-	if r.err != nil {
-		return nil, r.err
+	if r.Err != nil {
+		return nil, r.Err
 	}
 	if terminal != claim {
-		return nil, ErrReduction
+		return nil, ErrZerocheckTerminal
 	}
-	alpha := r.draw()
+	alpha := r.DrawElement()
 	alpha2 := alpha.Square()
 	beta := alpha2.Mul(alpha)
 	alpha4 := alpha2.Square()
@@ -148,8 +105,8 @@ func Verify(v *transcript.Verifier, shapes []Shape) ([]Replay, error) {
 	rounds := make([]E, maxRest)
 	for i := range rounds {
 		running, rounds[i] = r.round(running, nil)
-		if r.err != nil {
-			return nil, r.err
+		if r.Err != nil {
+			return nil, r.Err
 		}
 	}
 	waits := make([]E, maxRest+1)
@@ -162,23 +119,23 @@ func Verify(v *transcript.Verifier, shapes []Shape) ([]Replay, error) {
 	weight = one
 	for i, s := range shapes {
 		rest := s.KLog - 6
-		parts := r.many(64, false)
-		value := r.read()
-		if r.err != nil {
-			return nil, r.err
+		parts := r.Elements(64, false)
+		value := r.ReadElement()
+		if r.Err != nil {
+			return nil, r.Err
 		}
 		cols := slices.Clone(rounds[:rest])
 		slices.Reverse(cols)
 		rows := slices.Clone(mlv[:rest])
-		pin := parts[s.Pin&63].Mul(eqBits(s.Pin>>6, cols))
-		own := value.Add(beta.Mul(pin)).Add(alpha2.Mul(eqEval(rows, cols).Mul(lagrangeAt(z, vanish, parts))))
+		pin := parts[s.Pin&63].Mul(field.EqBits(uint64(s.Pin>>6), cols))
+		own := value.Add(beta.Mul(pin)).Add(alpha2.Mul(field.Eq(rows, cols).Mul(lagrangeAt(z, vanish, parts))))
 		total = total.Add(weight.Mul(waits[rest]).Mul(own))
 		weight = weight.Mul(alpha4)
 		point := append(slices.Clone(cols), mlv[rest:s.KLog+s.LogInstances-6]...)
 		out[i] = Replay{Claim: pcs.SliceClaim{Point: point, Slices: parts}, Matrix: MatrixClaim{Alpha: alpha, Skip: z, Value: value, Rows: rows, Cols: cols, Slices: parts}}
 	}
-	if r.err != nil {
-		return nil, r.err
+	if r.Err != nil {
+		return nil, r.Err
 	}
 	if total != running {
 		return nil, ErrReduction
@@ -194,8 +151,8 @@ func (m MatrixClaim) Check(c *machine.Circuit, scratch []E) error {
 		return ErrReduction
 	}
 	weights := lagrangeWeights(m.Skip)
-	row := func(i int) E { return weights[i&63].Mul(eqBits(i>>6, m.Rows)) }
-	col := func(i int) E { return m.Slices[i&63].Mul(eqBits(i>>6, m.Cols)) }
+	row := func(i int) E { return weights[i&63].Mul(field.EqBits(uint64(i>>6), m.Rows)) }
+	col := func(i int) E { return m.Slices[i&63].Mul(field.EqBits(uint64(i>>6), m.Cols)) }
 	got, err := c.Bilinear(m.Alpha, row, col, scratch)
 	if err != nil {
 		return err

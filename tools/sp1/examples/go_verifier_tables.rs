@@ -258,10 +258,12 @@ fn go_column(col: &VirtualPairCol<F>) -> String {
         })
         .collect::<Vec<_>>()
         .join(", ");
-    format!(
-        "virtualColumn{{{}, []columnTerm{{{terms}}}}}",
-        col.constant.as_canonical_u32()
-    )
+    let terms = if terms.is_empty() {
+        "nil".to_owned()
+    } else {
+        format!("[]columnTerm{{{terms}}}")
+    };
+    format!("{{{}, {terms}}}", col.constant.as_canonical_u32())
 }
 
 fn go_interactions(interactions: &[Interaction<F>]) -> String {
@@ -272,10 +274,10 @@ fn go_interactions(interactions: &[Interaction<F>]) -> String {
             .iter()
             .map(go_column)
             .collect::<Vec<_>>()
-            .join(",\n\t\t\t\t\t");
+            .join(", ");
         writeln!(
             out,
-            "\t\t\t{{\n\t\t\t\tkind: {},\n\t\t\t\tmultiplicity: {},\n\t\t\t\tvalues: []virtualColumn{{\n\t\t\t\t\t{values},\n\t\t\t\t}},\n\t\t\t}},",
+            "\t\t\t{{kind: {}, multiplicity: virtualColumn{}, values: []virtualColumn{{{values}}}}},",
             interaction.argument_index(),
             go_column(&interaction.multiplicity),
         )
@@ -836,27 +838,15 @@ fn write_statements(dir: &Path, fixture: &Path) {
         (wrong_key, pv.clone()),
         (noncanonical, pv),
     ];
-    #[derive(Serialize)]
-    struct Verdict {
-        key: String,
-        public_values: String,
-        ok: bool,
-    }
-    let verdicts: Vec<_> = cases
+    // Hex fields and booleans need no JSON string escaping.
+    let records: Vec<_> = cases
         .into_iter()
-        .map(|(k, p)| Verdict {
-            key: hex::encode(k),
-            public_values: hex::encode(&p),
-            ok: verifier.verify_with_public_values(k, &p, &proof).is_ok(),
-        })
-        .collect();
-    // Avoid adding a JSON library solely for six flat records.
-    let records: Vec<_> = verdicts
-        .iter()
-        .map(|v| {
+        .map(|(k, p)| {
             format!(
                 "{{\"key\":\"{}\",\"public_values\":\"{}\",\"ok\":{}}}",
-                v.key, v.public_values, v.ok
+                hex::encode(k),
+                hex::encode(&p),
+                verifier.verify_with_public_values(k, &p, &proof).is_ok()
             )
         })
         .collect();

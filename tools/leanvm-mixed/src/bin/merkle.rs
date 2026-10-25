@@ -1,12 +1,10 @@
 use fiat_shamir::{ProofTranscript, SessionId, VerifierState};
+use leanvm_mixed_reference::{PIN, hex};
 use pcs::{
     merkle::{hash_leaf, hash_pair},
     verifier::OpeningVerifier,
 };
 use serde_json::json;
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
-}
 fn main() {
     let out = std::env::args().nth(1).expect("output file");
     let session = SessionId::new(b"go-port-merkle-components");
@@ -85,5 +83,5 @@ fn main() {
             samples.push(json!({"depth":depth,"count":count,"queries":queries}));
         }
     }
-    std::fs::write(out,serde_json::to_string_pretty(&json!({"upstream_commit":"da5c964831c993b011464e4fd4a573b7172d5295","session":hex(&session.0),"openings":openings,"samples":samples})).unwrap()+"\n").unwrap();
+    std::fs::write(out,serde_json::to_string_pretty(&json!({"upstream_commit":PIN,"session":hex(&session.0),"openings":openings,"samples":samples})).unwrap()+"\n").unwrap();
 }
