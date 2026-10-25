@@ -73,3 +73,27 @@ func (v *ClassVerifier) verify(rootBytes []byte, claims ClaimSet, sealBytes []by
 	}
 	return settlement.Seal(v.class, root, seal)
 }
+
+// ClassConfig describes the leaf classes and capacities authenticated by the key.
+type ClassConfig = classkey.Config
+
+// LeafClass describes one supported program class and its leaf-proof bounds.
+type LeafClass = classkey.LeafClass
+
+// SmallTier describes the optional lower-capacity recursion tier.
+type SmallTier = classkey.SmallTier
+
+// Config returns an independent snapshot of the authenticated class configuration.
+// A nil or uninitialized verifier returns the zero configuration.
+func (v *ClassVerifier) Config() ClassConfig {
+	if v == nil || v.class == nil {
+		return ClassConfig{}
+	}
+	c := v.class.Config
+	c.Leaves = append([]LeafClass(nil), c.Leaves...)
+	if c.Small != nil {
+		small := *c.Small
+		c.Small = &small
+	}
+	return c
+}

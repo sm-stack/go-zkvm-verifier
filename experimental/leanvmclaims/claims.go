@@ -1,6 +1,7 @@
-// Mirrors rec/tree/multiset.rs::ClaimSet. Statement mapping uses four LE words
-// for each 32-byte digest, as op_leanvm_tree::claim_set does.
 package leanvmclaims
+
+// Claim-set encoding follows rec/tree/multiset.rs::ClaimSet.
+// Statement digests are interpreted as four little-endian words.
 
 import (
 	"encoding/binary"
@@ -16,7 +17,13 @@ type ClaimGroup = wire.Group
 
 // Statement identifies an authorized program and one member it committed.
 // PublicValuesDigest denotes the member, not the leaf's list commitment output.
-type Statement struct{ VkeyHash, PublicValuesDigest [32]byte }
+type Statement struct {
+	// VkeyHash is the normalized program verifying-key digest.
+	VkeyHash [32]byte
+	// PublicValuesDigest is one committed member (32 raw bytes), not the
+	// commitment to the complete member list. The name matches the OP adapter.
+	PublicValuesDigest [32]byte
+}
 
 // ClaimsFromStatements converts an already canonical statement list. It rejects
 // duplicates and disorder instead of sorting or discarding statements.

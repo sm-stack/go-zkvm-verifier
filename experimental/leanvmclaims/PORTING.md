@@ -43,7 +43,7 @@ func aggregateVerifier(v *leanvmclaims.ClassVerifier) ProofAggregateVerifier {
 }
 ```
 
-`statements.json` tests this conversion against Rust `ClaimSet::from_claims` followed by the input-equality check used by `op_leanvm_tree::claim_set`. It includes cases whose byte and numeric word ordering differ.
+`statements.json` tests this conversion against Rust `ClaimSet::from_claims` followed by an input-equality check. The Optimism adapter uses the same mapping; it is integration code in a separate repository, not part of the leanVM pin. It includes cases whose byte and numeric word ordering differ.
 
 ## Protocol and resource policy
 
@@ -122,3 +122,38 @@ Rust paths below are relative to `crates/leanvm_core/src/` unless a crate is nam
 | `verifier.go` | checked class load and `rec/tree/seal.rs::verify_claims_sealed` |
 
 The package paths in the table are under `internal/` except `claims.go` and `verifier.go`. Generated `metadata-review.json` summarizes dimensions and gate hashes for source review; it does not replace the full constraint data. Check it offline with `python3 tools/leanvm-mixed/export_metadata.py --summary-only --check`.
+
+### Operational class fixture
+
+`testdata/production` replays Optimism's six-statement aggregate (program executions
+and signatures) with the `b20ff9b907b2320fb8139f2753172235ae2e0a66fbad11c4a55500dfb4d33b50`
+class key. The raw key is 60,027,800 bytes; the compressed corpus is about 12 MiB.
+The class and source payload snapshot are under `tools/leanvm-mixed/production`;
+its provenance records the Optimism base commit and SHA-256 of the uncommitted
+inputs. The base commit alone does not reproduce that working tree. These files
+use Optimism's MIT license, preserved in LICENSE and NOTICE.
+
+`Config()` returns a deep copy of the authenticated descriptor for applications
+that additionally enforce capacity or leaf-class policy. Authentication still
+requires an independently trusted digest. The constructor keeps its defensive
+copy so caller aliases cannot alter an active verifier.
+
+Rebuild the operational key and extract its proof without generating new proofs:
+
+```sh
+cargo run --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml --bin production_key -- /tmp/claims-production
+python3 tools/leanvm-mixed/production_fixture.py /tmp/claims-production --check
+```
+
+`regenerate.py --check` checks this key, extracted inputs, and the full Rust verdict
+vectors. `production/fixtures.rs` records the source proof-generation example;
+re-running the entire Optimism prover additionally requires its snapshotted
+integration implementation, which is not vendored here. Existing proof bytes
+are self-contained and verified by the pinned Rust verifier.
+
+The one-tier positive corpus is regenerated with `tier_proofs -- OUT --one-tier`
+and packaged with `pack_proofs.py OUT --one-tier`. Authenticated descriptor
+mutations recompute the digest and compare the checked Rust loader, including a
+valid changed member capacity that Rust accepts. Authentication-failure tests
+remain separate. Root-rate, nonempty seals, and one-tier node layout selection
+have explicit regressions.

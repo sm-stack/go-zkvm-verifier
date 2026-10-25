@@ -179,7 +179,7 @@ if err != nil {
 return v.VerifySealed(claims, rootBytes, sealBytes)
 ```
 
-`statements` is a canonical `[]leanvmclaims.Statement`, with `[32]byte` program and member digests. The caller pins the class-key digest independently, authorizes program identities, and supplies its intended members. Configuration comes from the authenticated key. The package verifies root proofs and seals; proving, leaf-proof verification and same-program trees are outside its scope.
+`statements` is a canonical `[]leanvmclaims.Statement`, with `[32]byte` program and member digests. The caller pins the class-key digest independently, authorizes program identities, and supplies its intended members. Configuration comes from the authenticated key; `v.Config()` returns an independent snapshot for application policy checks. The package verifies root proofs and seals; proving, leaf-proof verification and same-program trees are outside its scope.
 
 ```sh
 bin/stark-go-verify leanvm-claims -class-key class-key.bin -digest TRUSTED_64_HEX_DIGEST \
@@ -187,6 +187,8 @@ bin/stark-go-verify leanvm-claims -class-key class-key.bin -digest TRUSTED_64_HE
 python3 tools/leanvm-mixed/regenerate.py --check
 CGO_ENABLED=0 GOMAXPROCS=2 go test ./experimental/leanvmclaims -run '^$' -fuzz '^FuzzVerifySealed$' -fuzztime 30s -parallel 1
 ```
+
+Tests replay one- and two-tier roots, rehashed descriptor mutations, and an Optimism operational-class aggregate against pinned Rust verdicts.
 
 Class-key or digest errors exit **2**; rejected root/claims/seal inputs exit **1**. The command adds no byte-size cap. See [PORTING.md](experimental/leanvmclaims/PORTING.md) for the wire format, integration adapter, source mapping and fixture generation.
 

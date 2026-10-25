@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/sm-stack/optimism",
+  "base_commit": "1e9d40e8b96c45bf7d01e973e4932e46d72a623d",
+  "source_state": "uncommitted working-tree snapshot; content hashes identify the inputs",
+  "upstream_commit": "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5",
+  "files": {
+    "rust/op-leanvm-tree/src/class.rs": "d34a64624e65d7f4edd7766f526c86ce9ab735c9d6a8e1006d509ae29f48653a",
+    "rust/op-leanvm-tree/examples/fixtures.rs": "fd26fb1ac9ecff8cf45ab14d26f2a985610df05498b7eee11cede805289b1c9d",
+    "rust/op-leanvm-tree/testdata/tree.payload": "827f6ae4aa9c66ccd5835ec8375ba9ce160a5bd363ee1f1a2986f606e26a0765"
+  }
+}

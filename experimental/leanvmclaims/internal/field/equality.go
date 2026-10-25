@@ -2,6 +2,8 @@
 // Equality helpers derived from pinned leanVM flock/PCS/recursion code; see NOTICE.
 package field
 
+import "github.com/sm-stack/go-zkvm-verifier/internal/gf2"
+
 // EqBits evaluates the equality polynomial at a Boolean index, low bit first.
 func EqBits(index uint64, point []Element) Element {
 	out := One
@@ -16,16 +18,17 @@ func EqBits(index uint64, point []Element) Element {
 
 // EqTable evaluates every Boolean index; callers bound the point dimension.
 func EqTable(point []Element) []Element {
-	out := make([]Element, 1, 1<<uint(len(point)))
+	return EqTableInto(make([]Element, 1<<uint(len(point))), point)
+}
+
+// EqTableInto initializes exactly 2^len(point) entries of caller-owned scratch.
+func EqTableInto(dst []Element, point []Element) []Element {
+	out := dst[: 1 : 1<<uint(len(point))]
 	out[0] = One
 	for _, x := range point {
 		n := len(out)
 		out = out[:n*2]
-		for i := 0; i < n; i++ {
-			hi := out[i].Mul(x)
-			out[n+i] = hi
-			out[i] = out[i].Add(hi)
-		}
+		gf2.EqExpand(out, n, x)
 	}
 	return out
 }

@@ -1,7 +1,7 @@
 # Performance
 
 Measured 2026-10-25 on Apple M4 Pro, macOS arm64, Go 1.26.10.
-All rows use `CGO_ENABLED=0`, `GOMAXPROCS=1`, five sequential batches of
+The standalone rows below use `CGO_ENABLED=0`, `GOMAXPROCS=1`, five sequential batches of
 20 operations. Times are medians of batch means; ranges show all five batches.
 Allocated bytes are per operation, not peak RSS.
 
@@ -51,34 +51,53 @@ RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 
 ## Experimental claim trees
 
-Production class at `59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`: 60,027,800 key bytes, two leaf classes, capacity 4097, 357 claims in four groups, large-tier root. Same host as above. Rust and Go ran sequentially with one worker each; five process invocations, 100 warmed verification iterations each. Values below are medians; class loading is cold once per process and includes Go's lazy circuit metadata initialization. File I/O is excluded from times.
+Measured on the same host, with one worker per implementation. Each number is
+the median of three sequential process runs, 100 warmed verifications per run.
+Rust and Go were alternated on identical input bytes. The baseline is commit
+`399813f`; current Go uses batched field kernels and reusable equality scratch.
 
-| Operation | Go | Rust |
-| --- | ---: | ---: |
-| Checked class load | 121.926 ms | 97.673 ms |
-| Sealed root verification | 29.739 ms | 5.412 ms |
-| Direct root verification | not exposed | 18.212 ms |
+| Fixture | Baseline Go | Current Go | Rust | Current Go / Rust |
+| --- | ---: | ---: | ---: | ---: |
+| Optimism operational class, 6 claims | 18.877 ms | 9.761 ms | 3.947 ms | 2.47× |
+| Fork example, 357 claims | 29.812 ms | 11.516 ms | 5.435 ms | 2.12× |
 
-Go sealed verification allocated 18,465,008 bytes and 3,711 objects per operation. Its batch means ranged from 29.693 to 29.825 ms, versus Rust's 5.385 to 5.480 ms. Go was about 5.5 times slower on this fixture. These are finite local measurements, not a general performance bound. The Go API decodes root/seal bytes on each call; the Rust tool verifies already-decoded objects. Claim decoding is outside both loops.
+Both use leanVM `59c25cccfd5742f8216f259f9dd4d80d9a5f66e5` and a
+60,027,800-byte key, but different authenticated class configurations. The
+operational key digest is `b20ff9b907b2320fb8139f2753172235ae2e0a66fbad11c4a55500dfb4d33b50`;
+the fork example starts `05860eb9`. The operational fixture is shipped in
+`experimental/leanvmclaims/testdata/production` and includes program executions
+and signatures. It is not a full-capacity stress benchmark.
 
-A separate load-only process took 122.968 ms, allocated 75,707,016 Go heap bytes during construction, and ended with 76,603,392 heap-in-use bytes. `/usr/bin/time -l` measured a **129,794,048-byte peak process RSS**. RSS includes the input key, runtime and metadata; it is not an isolated constructor allocation count. The constructor copies its key, and the input can subsequently be released.
+Operational-class verification allocated 8,108,248 bytes / 3,564 objects per
+operation, versus 13,244,632 bytes / 3,568 objects at baseline. The 357-claim
+fixture allocated 8,167,664 bytes / 3,706 objects, versus 18,465,008 bytes / 3,711
+objects. Equality scratch retains at most one 24 MiB buffer across calls;
+concurrent calls own separate scratch. Retained memory is not included in
+per-operation allocated bytes.
 
-Reproduce using an uncommitted output directory:
+Operational-class cold loading took 121.738 ms in Go and 99.353 ms in Rust.
+Go allocated about 75.7 MB during loading, including its defensive key copy and
+lazy circuit metadata initialization. This work does not optimize class loading.
+The Go verification loop decodes root/seal bytes each time; Rust verifies decoded
+objects. Claim decoding and file I/O are outside both loops.
+
+Reproduce without generating any new proof:
 
 ```sh
-python3 tools/leanvm-mixed/generate_production.py /tmp/claim-production
+cargo run --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml --bin production_key -- /tmp/claims-production
+python3 tools/leanvm-mixed/production_fixture.py /tmp/claims-production --check
 CGO_ENABLED=0 go build -o /tmp/benchmark-claims ./tools/benchmark-claims
 cargo build --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml --bin benchmark
-# Run sequentially, five times each:
-GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claim-production/two-class -n 100
-tools/leanvm-mixed/target/release/benchmark /tmp/claim-production/two-class
-# macOS peak process RSS for class loading:
-GOMAXPROCS=1 /usr/bin/time -l /tmp/benchmark-claims -mode load -dir /tmp/claim-production/two-class
+# Run sequentially, three times each:
+GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claims-production -n 100
+tools/leanvm-mixed/target/release/benchmark /tmp/claims-production
 ```
 
-Generation uses two workers and omits the example's independent common-class comparison; the benchmark tools use one worker. The original example's printed verification samples are not used for the table. To benchmark the committed small corpus:
+For the fork example, `generate_production.py OUT` generates its separate class
+and proofs with two workers; benchmark `OUT/two-class` with the same commands.
+The committed small corpus has Go benchmarks as well:
 
 ```sh
 CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
-  -run '^$' -bench 'Benchmark(ClassLoad|VerifySealed)$' -benchmem -benchtime=20x -count=5
+  -run '^$' -bench 'Benchmark(ClassLoad|VerifySealed)$' -benchmem -benchtime=20x -count=3
 ```

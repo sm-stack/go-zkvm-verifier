@@ -43,18 +43,6 @@ type Key struct {
 	data         []byte
 }
 
-// Word returns a fixed-column word. Caller indices must be checked by the verifier.
-func (k *Key) Word(circuit, column, row int) (uint64, error) {
-	if circuit < 0 || circuit >= len(k.Circuits) || column < 0 || column >= 102 {
-		return 0, ErrEncoding
-	}
-	c := k.Circuits[circuit].Columns[column]
-	if row < 0 || row >= c.Words {
-		return 0, ErrEncoding
-	}
-	return binary.LittleEndian.Uint64(k.data[c.Offset+8*row:]), nil
-}
-
 type reader struct {
 	data []byte
 	pos  int
@@ -194,4 +182,17 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 	}
 	k.data = data
 	return k, nil
+}
+
+// ColumnBytes returns a read-only view of the first rows little-endian words.
+// Only verifier internals can access this view; callers must not modify it.
+func (k *Key) ColumnBytes(circuit, column, rows int) ([]byte, error) {
+	if circuit < 0 || circuit >= len(k.Circuits) || column < 0 || column >= 102 {
+		return nil, ErrEncoding
+	}
+	c := k.Circuits[circuit].Columns[column]
+	if rows < 0 || rows > c.Words {
+		return nil, ErrEncoding
+	}
+	return k.data[c.Offset : c.Offset+8*rows], nil
 }

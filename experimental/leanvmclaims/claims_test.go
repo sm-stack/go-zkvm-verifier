@@ -3,6 +3,7 @@ package leanvmclaims
 
 import (
 	"bytes"
+	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/classkey"
 	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
@@ -45,5 +46,6 @@ func FuzzNewClassVerifier(f *testing.F) {
 		var pin [32]byte
 		copy(pin[:], digest)
 		_, _ = NewClassVerifier(key, pin)
+		_, _ = NewClassVerifier(key, classkey.Digest(key))
 	})
 }

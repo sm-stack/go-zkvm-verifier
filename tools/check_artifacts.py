@@ -7,7 +7,7 @@ import sys
 
 root = Path(__file__).resolve().parent.parent
 manifest = root/'artifacts.json'
-paths = sorted([*root.glob('leanvm/testdata/*'), *root.glob('experimental/leanvmclaims/testdata/**/*'), *root.glob('sp1/testdata/*.json'),
+paths = sorted([*root.glob('leanvm/testdata/*'), *root.glob('tools/leanvm-mixed/production/*'), *root.glob('experimental/leanvmclaims/testdata/**/*'), *root.glob('sp1/testdata/*.json'),
                 *root.glob('sp1/testdata/fixture/*'), root/'experimental/leanvmclaims/internal/machine/metadata.json', root/'experimental/leanvmclaims/internal/machine/metadata-review.json', root/'experimental/leanvmclaims/internal/pcs/config_table_gen.go', root/'sp1/compress_machine_gen.go', root/'sp1/poseidon2_fast_gen.go'])
 actual = {str(p.relative_to(root)): {'bytes': p.stat().st_size,
           'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths if p.is_file()}

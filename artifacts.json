@@ -11,6 +11,10 @@
     "bytes": 9857,
     "sha256": "0d653b724ebc7d2a28b5f3024037ee090ce09dd556a41cb14e7089eb966b567c"
   },
+  "experimental/leanvmclaims/testdata/class-mutations.json": {
+    "bytes": 2534,
+    "sha256": "422a16fb6f9ba354debad71f8a6a1f6957d415c9bab7166aaf4022b4300b6e6c"
+  },
   "experimental/leanvmclaims/testdata/classes.json": {
     "bytes": 9926,
     "sha256": "451e35d307daa085deddf9a63e1d9c4ddea29744b0f46cc3214cb02b2494beb7"
@@ -199,13 +203,105 @@
     "bytes": 222939,
     "sha256": "da5dc94691c03429b59609f07a4a6f490aa62b2d9240f00211d27082d19f83b2"
   },
+  "experimental/leanvmclaims/testdata/one-tier-components.json": {
+    "bytes": 8231,
+    "sha256": "7aab6c9a0979afcab7b9bc2b779fc60df9331b41db9cc3cee9d00483faa78820"
+  },
   "experimental/leanvmclaims/testdata/one-tier.key.gz": {
     "bytes": 20246,
     "sha256": "fb8c15dc074ec460a08123aaf29883cf6bf080810edaa6211fe87b80437a002d"
   },
+  "experimental/leanvmclaims/testdata/one-tier/class-key.bin.gz": {
+    "bytes": 4935391,
+    "sha256": "4a28e8c37ce13d1a3b2c2c6ac349a3957f999b96fe05d33c692fd1a44c06d4a1"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/class-key.digest.gz": {
+    "bytes": 70,
+    "sha256": "f2ca2b89717ca1887175a203f53cf3fe2168827341ee2f062736a9025783854d"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/first-class1/claims.bin.gz": {
+    "bytes": 67,
+    "sha256": "9ad03078b6b26cd1d90373d9c5e3d9c250b1f42f7e835fc64cfa2893d0813037"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/first-class1/root.bin.gz": {
+    "bytes": 225675,
+    "sha256": "bdc60d6c6d7ff6c953e056d4f3cd172c3658b383546c1dc69f95b3f561b20d97"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/first-class1/seal.bin.gz": {
+    "bytes": 23,
+    "sha256": "3391ee21fd4e088e16c769f83447ff329b36a3cca1a4d82b13fe30b6ca6ece96"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/first/claims.bin.gz": {
+    "bytes": 79,
+    "sha256": "7adf06eb2682def3644e59eb342f6095bf55c97a092db3da9316acd081d19a50"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/first/root.bin.gz": {
+    "bytes": 226206,
+    "sha256": "6d0d7e02488c13419c01510d44e3dd9a1accbeb99c9295c59699183bce2b4d8e"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/first/seal.bin.gz": {
+    "bytes": 23,
+    "sha256": "3391ee21fd4e088e16c769f83447ff329b36a3cca1a4d82b13fe30b6ca6ece96"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/one-member/claims.bin.gz": {
+    "bytes": 67,
+    "sha256": "7fcf56dbed85f0d505547815aac490dcd74f92eae3eade9ac465bab147bad360"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/one-member/root.bin.gz": {
+    "bytes": 226269,
+    "sha256": "8fa6efd59a90d188ccd8b66a1e383d170a070058377ecd6497fa79a46494d1c5"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/one-member/seal.bin.gz": {
+    "bytes": 23,
+    "sha256": "3391ee21fd4e088e16c769f83447ff329b36a3cca1a4d82b13fe30b6ca6ece96"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/provenance.json": {
+    "bytes": 2092,
+    "sha256": "d0b40d15f2532997b73f1f816a7735dcf34fbdd2586d7240c8ea861a07581b8a"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/small-node/claims.bin.gz": {
+    "bytes": 121,
+    "sha256": "3e7c22cadff2c4e62ceece0ce79a0b7d372fe203ea3868bbb0301b8b2c390b57"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/small-node/root.bin.gz": {
+    "bytes": 243409,
+    "sha256": "de95e76b3fcb83b78e24a09bc68df29c38af7d32a6c9a2be87feb9e880171a41"
+  },
+  "experimental/leanvmclaims/testdata/one-tier/small-node/seal.bin.gz": {
+    "bytes": 151628,
+    "sha256": "cbfcb2d1b3da317c8de6d85c129fc0d7975ed8b5f6e6f7a4e53fb83460e00e3e"
+  },
+  "experimental/leanvmclaims/testdata/production-components.json": {
+    "bytes": 2209,
+    "sha256": "19ee2990d52fbb2131ff9ac5081dfe7af00e1edf1f21603fbd02f73ffbe780df"
+  },
+  "experimental/leanvmclaims/testdata/production/claims.bin.gz": {
+    "bytes": 343,
+    "sha256": "6297248c345ff773f9ab630dfe6fc740a4127a548215189e791a1dfa46a1a283"
+  },
+  "experimental/leanvmclaims/testdata/production/class-key.bin.gz": {
+    "bytes": 12468374,
+    "sha256": "2be4ec05a34ec21c3688f8b283ad0e6dcf906c831153f40d8e7a11bc05e00dd9"
+  },
+  "experimental/leanvmclaims/testdata/production/class-key.digest.gz": {
+    "bytes": 71,
+    "sha256": "2aca51c10fd129f156af17ad9017c5c3b1ceb0c6b3eefcca58ba806332054fd4"
+  },
+  "experimental/leanvmclaims/testdata/production/provenance.json": {
+    "bytes": 809,
+    "sha256": "a2fac328d590356ddcb6d45c2632691399c5d65741a672b30a25e6231477eb8c"
+  },
+  "experimental/leanvmclaims/testdata/production/root.bin.gz": {
+    "bytes": 252276,
+    "sha256": "9af1f0f81053f18006de0d9fd963a29157cc9575a1a26ea6cf0ead880008f794"
+  },
+  "experimental/leanvmclaims/testdata/production/seal.bin.gz": {
+    "bytes": 296810,
+    "sha256": "31aad897ff3a2881f1b885ae092331817d1f137bbc97b3c5d375e15092632bf1"
+  },
   "experimental/leanvmclaims/testdata/root-components.json": {
-    "bytes": 12348,
-    "sha256": "cb69dee7277e184010f75fcb241822d4744d40dcdd5bf1365530867b84bf216a"
+    "bytes": 12576,
+    "sha256": "eea2b3ef8eb54d9550f143fe39ede1299307edae3c1e8581466cb1f17520e8f3"
   },
   "experimental/leanvmclaims/testdata/roots/class-key.bin.gz": {
     "bytes": 8194220,
@@ -374,5 +470,21 @@
   "sp1/testdata/vectors.json": {
     "bytes": 43040,
     "sha256": "0299ca77a68733c53a54f3c71c98644c7255f889ba61d4ad5d44281cbfe75c85"
+  },
+  "tools/leanvm-mixed/production/class.rs": {
+    "bytes": 3697,
+    "sha256": "d34a64624e65d7f4edd7766f526c86ce9ab735c9d6a8e1006d509ae29f48653a"
+  },
+  "tools/leanvm-mixed/production/fixtures.rs": {
+    "bytes": 5738,
+    "sha256": "fd26fb1ac9ecff8cf45ab14d26f2a985610df05498b7eee11cede805289b1c9d"
+  },
+  "tools/leanvm-mixed/production/provenance.json": {
+    "bytes": 634,
+    "sha256": "07d2b8b75ff0638ad9c47e6fbd764cc2a404d5992df9e118c9a7ffc5c14f78e5"
+  },
+  "tools/leanvm-mixed/production/tree.payload.gz": {
+    "bytes": 549435,
+    "sha256": "d50e6576f18178f2a1e91a3e0d918f4e9a5d74e76daedb7ce8bda388f29889ac"
   }
 }

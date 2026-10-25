@@ -34,6 +34,14 @@ else:
         run(['cargo', 'run', '--locked', '--release', '-j', '2', '--manifest-path',
              str(ROOT/'tools/leanvm-mixed/Cargo.toml'), '--bin', 'root_components', '--',
              str(ROOT/'experimental/leanvmclaims/testdata/roots'), str(out/'root-components.json')], cwd=ROOT)
+        run(['cargo', 'run', '--locked', '--release', '-j', '2', '--manifest-path',
+             str(ROOT/'tools/leanvm-mixed/Cargo.toml'), '--bin', 'root_components', '--',
+             str(ROOT/'experimental/leanvmclaims/testdata/one-tier'), str(out/'one-tier-components.json')], cwd=ROOT)
+        for component, source, output in [('class_mutations', 'roots', 'class-mutations.json'), ('root_components', 'production', 'production-components.json')]:
+            run(['cargo', 'run', '--locked', '--release', '-j', '2', '--manifest-path', str(ROOT/'tools/leanvm-mixed/Cargo.toml'), '--bin', component, '--', str(ROOT/'experimental/leanvmclaims/testdata'/source), str(out/output)], cwd=ROOT)
+        production = Path(tmp)/'production'
+        run(['cargo', 'run', '--locked', '--release', '-j', '2', '--manifest-path', str(ROOT/'tools/leanvm-mixed/Cargo.toml'), '--bin', 'production_key', '--', str(production)], cwd=ROOT)
+        run([sys.executable, str(ROOT/'tools/leanvm-mixed/production_fixture.py'), str(production), *(['--check'] if a.check else [])], cwd=ROOT)
         generated_config = Path(tmp)/'config_table_gen.go'
         run(['cargo', 'run', '--locked', '--release', '-j', '2', '--manifest-path',
              str(ROOT/'tools/leanvm-mixed/Cargo.toml'), '--bin', 'config', '--', str(generated_config)], cwd=ROOT)
@@ -46,7 +54,7 @@ else:
         else:
             config_target.write_bytes(generated_config.read_bytes())
         if a.check:
-            for name in ('one-tier.key.gz', 'two-tier.key.gz', 'classes.json', 'transcript.json', 'wire.json', 'field.json', 'merkle.json', 'whir.json', 'stack.json', 'flock.json', 'statements.json', 'root-components.json'):
+            for name in ('one-tier.key.gz', 'two-tier.key.gz', 'classes.json', 'transcript.json', 'wire.json', 'field.json', 'merkle.json', 'whir.json', 'stack.json', 'flock.json', 'statements.json', 'root-components.json', 'one-tier-components.json', 'class-mutations.json', 'production-components.json'):
                 if (out/name).read_bytes() != (ROOT/'experimental/leanvmclaims/testdata'/name).read_bytes():
                     raise SystemExit(f'generated fixture differs: {name}')
                 print(f'matched: {name}')

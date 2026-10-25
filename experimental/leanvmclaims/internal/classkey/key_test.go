@@ -2,6 +2,7 @@ package classkey
 
 import (
 	"bytes"
+	"encoding/binary"
 	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"os"
 	"path/filepath"
@@ -109,12 +110,17 @@ func TestRustClassKeyVectors(t *testing.T) {
 			if _, e = Decode(extra, Digest(extra)); e == nil {
 				t.Fatal("trailing byte accepted")
 			}
+			for _, q := range [][3]int{{-1, 0, 0}, {len(k.Circuits), 0, 0}, {0, -1, 0}, {0, 102, 0}, {0, 0, k.Circuits[0].Columns[0].Words + 1}} {
+				if _, e := k.ColumnBytes(q[0], q[1], q[2]); e == nil {
+					t.Fatal("column bounds", q)
+				}
+			}
 			pos := k.Circuits[0].Columns[0].Offset
 			b[pos] ^= 255
-			if w, e := k.Word(0, 0, 0); e != nil || w != 0 {
+			if w, e := k.ColumnBytes(0, 0, 1); e != nil || binary.LittleEndian.Uint64(w) != 0 {
 				t.Fatal("caller mutation changed owned key")
 			}
-			if _, e := k.Word(0, 0, -1); e == nil {
+			if _, e := k.ColumnBytes(0, 0, -1); e == nil {
 				t.Fatal("negative row")
 			}
 		})

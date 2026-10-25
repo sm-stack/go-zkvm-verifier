@@ -1,4 +1,4 @@
-//! Match op_leanvm_tree::claim_set: canonicalize in Rust, then compare to input.
+//! Canonicalize with the pinned Rust ClaimSet, then require equality to input.
 use leanvm::aggregate::{Claim, ClaimSet};
 use leanvm_mixed_reference::{PIN, hex};
 use serde_json::json;

@@ -46,7 +46,7 @@ func runLeanVMClaims(args []string, out, diagnostics io.Writer) int {
 	}
 	verifier, err := leanvmclaims.NewClassVerifier(key, [32]byte(digest))
 	if err != nil {
-		fmt.Fprintln(diagnostics, "invalid class configuration:", err)
+		fmt.Fprintln(diagnostics, "invalid class key or digest:", err)
 		return 2
 	}
 	paths := []string{*rootPath, *claimPath, *sealPath}

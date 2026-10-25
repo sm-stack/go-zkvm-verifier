@@ -5,6 +5,7 @@ use leanvm_mixed_reference::PIN;
 use serde_json::json;
 use std::{io::Read, path::Path};
 fn read(base: &Path, name: &str) -> Vec<u8> {
+    let name = name.strip_prefix("production/").unwrap_or(name);
     let f = std::fs::File::open(base.join(format!("{name}.gz"))).unwrap();
     let mut out = vec![];
     flate2::read::GzDecoder::new(f)
@@ -21,7 +22,7 @@ fn main() {
     let (classes, shape) = leanvm_mixed_reference::descriptor(&key);
     let tree = Tree::mixed_classes_from_bytes(&classes, shape, &key, &pin).unwrap();
     let mut cases = vec![];
-    let names = [
+    let all_names = [
         "first",
         "first-class1",
         "one-member",
@@ -29,6 +30,13 @@ fn main() {
         "wide",
         "fold-dedup",
     ];
+    let names = if base.ends_with("production") {
+        &["production"][..]
+    } else if shape.claims.unwrap().small.is_none() {
+        &all_names[..4]
+    } else {
+        &all_names[..]
+    };
     for (i, name) in names.iter().enumerate() {
         let bytes = read(base, &format!("{name}/root.bin"));
         let root = TreeProof::from_bytes(&bytes).unwrap();
@@ -66,9 +74,15 @@ fn main() {
         let mut s = seal.clone();
         s.narg.push(0);
         verdicts.push(json!({"action":"seal-trailing","accept":accepts(&root,&claims,&s)}));
-        let other = names[if i < 3 { 4 } else { 0 }];
+        let other = names[if i < 3 { names.len() - 1 } else { 0 }];
         let s = ProofTranscript::from_bytes(&read(base, &format!("{other}/seal.bin"))).unwrap();
-        verdicts.push(json!({"action":"seal-swap","accept":accepts(&root,&claims,&s)}));
+        if names.len() > 1 {
+            verdicts.push(json!({"action":"seal-swap","accept":accepts(&root,&claims,&s)}));
+        }
+        let mut changed = bytes.clone();
+        changed[6] = if bytes[6] == 1 { 2 } else { 1 };
+        let wrong = TreeProof::from_bytes(&changed).unwrap();
+        verdicts.push(json!({"action":"root-rate","accept":accepts(&wrong,&claims,&seal)}));
         let transcript_at = 11 + 24 * words;
         let narg = u64::from_le_bytes(bytes[transcript_at..transcript_at + 8].try_into().unwrap())
             as usize;

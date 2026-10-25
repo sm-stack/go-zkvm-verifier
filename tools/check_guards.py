@@ -71,6 +71,18 @@ mutations += [
 ]
 mutations += [(CLAIMS+file, old, new, './'+CLAIMS+package, test)
               for file, old, new, package, test in MIXED_CASES]
+mutations += [
+ ('experimental/leanvmclaims/internal/recursion/verify.go', 'len(k.Layouts) == 2 &&', '', './experimental/leanvmclaims', 'TestRustOneTierVerdicts'),
+ ('experimental/leanvmclaims/internal/settlement/settlement.go', ' || uint64(root.Rate) != k.Config.TreeRate', '', './experimental/leanvmclaims', 'TestRootRateBinding'),
+]
+mutations += [
+ ('experimental/leanvmclaims/internal/classkey/key.go', ' || config.check() != nil', '', './experimental/leanvmclaims', 'TestClassContainerGuards'),
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', ' || leaf.MaxMembers == 0', '', './experimental/leanvmclaims', 'TestClassContainerGuards'),
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', 's := c.Small; s != nil &&', 's := c.Small; false && s != nil &&', './experimental/leanvmclaims', 'TestClassContainerGuards'),
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', 'for _, c := range config.Leaves {', 'for _, c := range config.Leaves[:1] {', './experimental/leanvmclaims', 'TestAuthenticatedClassMutations'),
+ ('experimental/leanvmclaims/internal/classkey/key.go', ' || n != expectedCircuits', ' || (false && n != expectedCircuits)', './experimental/leanvmclaims', 'TestClassContainerGuards'),
+ ('experimental/leanvmclaims/internal/classkey/key.go', 'c.Heights != k.Heights[tier]', '(false && c.Heights != k.Heights[tier])', './experimental/leanvmclaims', 'TestClassContainerGuards'),
+]
 # A pre-existing failing regression must never count as a caught mutation.
 for package in sorted({case[3] for case in mutations}):
     tests = sorted({case[4] for case in mutations if case[3] == package})

@@ -4,6 +4,7 @@ package recursion
 
 import (
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
+	"github.com/sm-stack/go-zkvm-verifier/internal/gf2"
 	"math/bits"
 	"slices"
 
@@ -106,6 +107,18 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 	}
 	out.point = point
 	// The class key owns all public columns; no proof-supplied evaluation is trusted.
+	// One retained scratch buffer, capped at 24 MiB; concurrent callers own separate buffers.
+	sizes := make(map[int]bool)
+	count := 0
+	for _, b := range blocks {
+		if !sizes[b.height] {
+			sizes[b.height] = true
+			count += 1 << uint(b.height)
+		}
+	}
+	scratch := takeBusScratch(count)
+	defer releaseBusScratch(scratch)
+	used := 0
 	eqs := make(map[int][]E)
 	fixed := make(map[int]E)
 	public := func(column, height int, statement bool) (E, error) {
@@ -114,24 +127,25 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		}
 		eq, ok := eqs[height]
 		if !ok {
-			eq = field.EqTable(point[:height])
+			n := 1 << uint(height)
+			eq = field.EqTableInto(scratch[used:used+n], point[:height])
+			used += n
 			eqs[height] = eq
 		}
-		value := E{}
-		for row, weight := range eq {
-			word, err := k.Key.Word(position, column, row)
-			if err != nil {
-				return E{}, err
-			}
-			if statement && row < len(root.Words) {
-				j := column - 98
-				word = 0
-				if j < 3 {
-					word = root.Words[row][j]
+		words, err := k.Key.ColumnBytes(position, column, len(eq))
+		if err != nil {
+			return E{}, err
+		}
+		value, start := E{}, 0
+		if statement {
+			start = min(len(root.Words), len(eq))
+			if j := column - 98; j < 3 {
+				for row := range start {
+					value = value.Add(eq[row].MulBase(root.Words[row][j]))
 				}
 			}
-			value = value.Add(weight.MulBase(word))
 		}
+		value = value.Add(gf2.DotBase(eq[start:], words[8*start:]))
 		fixed[column] = value
 		return value, nil
 	}
@@ -176,4 +190,28 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		out.totals[side] = values[side].Add(acc).Add(padding)
 	}
 	return out, r.Err
+}
+
+const maxBusScratch = 1 << 20
+
+var busScratch = make(chan []E, 1)
+
+func takeBusScratch(n int) []E {
+	select {
+	case b := <-busScratch:
+		if cap(b) >= n {
+			return b[:n]
+		}
+	default:
+	}
+	return make([]E, n)
+}
+func releaseBusScratch(b []E) {
+	if cap(b) > maxBusScratch {
+		return
+	}
+	select {
+	case busScratch <- b:
+	default:
+	}
 }

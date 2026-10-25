@@ -40,6 +40,23 @@ func TestLeanVMClaimsCLI(t *testing.T) {
 		return diag.String()
 	}
 	check(args, 0)
+	for _, name := range []string{"small-node", "wide"} {
+		node := append([]string(nil), args...)
+		node[6] = unpack(name + "/root.bin")
+		node[8] = unpack(name + "/claims.bin")
+		node[10] = unpack(name + "/seal.bin")
+		check(node, 0)
+		broken := append([]byte(nil), files[name+"/seal.bin"]...)
+		broken[len(broken)-1] ^= 1
+		if err := os.WriteFile(node[10], broken, 0600); err != nil {
+			t.Fatal(err)
+		}
+		check(node, 1)
+	}
+	unpack("first/root.bin")
+	unpack("first/claims.bin")
+	unpack("first/seal.bin")
+
 	for _, index := range []int{2, 6, 8, 10} {
 		nonregular := append([]string(nil), args...)
 		nonregular[index] = os.DevNull
@@ -54,7 +71,7 @@ func TestLeanVMClaimsCLI(t *testing.T) {
 	bad[4] = "0000000000000000000000000000000000000000000000000000000000000000"
 	check(bad, 2)
 	bad[8] = filepath.Join(dir, "missing")
-	if diagnostic := check(bad, 2); !strings.Contains(diagnostic, "invalid class configuration:") {
+	if diagnostic := check(bad, 2); !strings.Contains(diagnostic, "invalid class key or digest:") {
 		t.Fatal("class authentication did not precede proof I/O:", diagnostic)
 	}
 	bad = append([]string(nil), args...)

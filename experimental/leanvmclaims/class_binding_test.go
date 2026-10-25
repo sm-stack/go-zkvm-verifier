@@ -24,6 +24,8 @@ func TestClassAndKindBindings(t *testing.T) {
 	if _, err := NewClassVerifier(key, classkey.Digest(key)); err == nil {
 		t.Fatal("unsupported key version accepted")
 	}
+	// These check digest authentication; rehashed descriptors are exercised in
+	// TestAuthenticatedClassMutations against Rust verdicts.
 	for _, offset := range []int{16 + 32, 16 + 136 + 32} { // K of each authenticated leaf class
 		key = append([]byte(nil), f.files["class-key.bin"]...)
 		key[offset] ^= 1

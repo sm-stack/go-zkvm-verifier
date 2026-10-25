@@ -60,6 +60,7 @@ fn main() {
             shape: second,
         },
     ];
+    let one_tier = std::env::args().any(|a| a == "--one-tier");
     let shape = TreeShape {
         leaf: first,
         arity_0: 1,
@@ -70,13 +71,17 @@ fn main() {
                 claims: 8,
                 groups: 4,
             },
-            small: Some(Tier {
-                arity: 2,
-                capacity: Capacity {
-                    claims: 5,
-                    groups: 2,
-                },
-            }),
+            small: if one_tier {
+                None
+            } else {
+                Some(Tier {
+                    arity: 2,
+                    capacity: Capacity {
+                        claims: 5,
+                        groups: 2,
+                    },
+                })
+            },
         }),
     };
     eprintln!("building two-class member tree");
@@ -115,14 +120,16 @@ fn main() {
     }
     let small = tree.aggregate(&[&roots[0].1, &roots[1].1], None).unwrap();
     roots.push(("small-node", small));
-    let mut acc = Accumulator::default();
-    tree.fold(&mut acc, &roots[3].1).unwrap();
-    tree.fold(&mut acc, &roots[2].1).unwrap();
-    roots.push(("wide", acc.close().unwrap()));
-    tree.fold(&mut acc, &roots[4].1).unwrap();
-    tree.fold(&mut acc, &roots[0].1).unwrap();
-    roots.push(("fold-dedup", acc.close().unwrap()));
-    assert_eq!(roots[4].1.claims, roots[5].1.claims);
+    if !one_tier {
+        let mut acc = Accumulator::default();
+        tree.fold(&mut acc, &roots[3].1).unwrap();
+        tree.fold(&mut acc, &roots[2].1).unwrap();
+        roots.push(("wide", acc.close().unwrap()));
+        tree.fold(&mut acc, &roots[4].1).unwrap();
+        tree.fold(&mut acc, &roots[0].1).unwrap();
+        roots.push(("fold-dedup", acc.close().unwrap()));
+        assert_eq!(roots[4].1.claims, roots[5].1.claims);
+    }
     for (name, root) in roots {
         let seal = tree.seal(&sealer, &root.proof).unwrap();
         verifier.verify_claims(&root.proof, &root.claims).unwrap();

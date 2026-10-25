@@ -18,8 +18,11 @@ type fixtures struct {
 }
 
 func loadFixtures(t testing.TB) fixtures {
+	return loadFixtureSet(t, "testdata/roots", 20)
+}
+func loadFixtureSet(t testing.TB, path string, count int) fixtures {
 	t.Helper()
-	_, files := fixture.Load(t, "testdata/roots", UpstreamCommit, 20)
+	_, files := fixture.Load(t, path, UpstreamCommit, count)
 	f := fixtures{files: files}
 	pin, err := hex.DecodeString(string(files["class-key.digest"]))
 	if err != nil || len(pin) != 32 {
@@ -61,7 +64,7 @@ func replayVerdicts(t *testing.T, f fixtures, path string) {
 		}
 	}
 	fixture.JSON(t, path, &vectors)
-	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != 6 {
+	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != (len(f.files)-2)/3 {
 		t.Fatal("stale root verdicts")
 	}
 	for index, c := range vectors.Cases {
@@ -78,6 +81,12 @@ func replayVerdicts(t *testing.T, f fixtures, path string) {
 			}
 			switch v.Action {
 			case "original":
+			case "root-rate":
+				if root[6] == 1 {
+					root[6] = 2
+				} else {
+					root[6] = 1
+				}
 			case "root-byte-flip":
 				root[v.At] ^= 1
 			case "root-cut":
@@ -98,7 +107,7 @@ func replayVerdicts(t *testing.T, f fixtures, path string) {
 			case "seal-swap":
 				other := vectors.Cases[0].Name
 				if index < 3 {
-					other = "wide"
+					other = vectors.Cases[len(vectors.Cases)-1].Name
 				}
 				seal = f.files[other+"/seal.bin"]
 			default:
@@ -228,4 +237,8 @@ func TestFirstSmallAndWide(t *testing.T) {
 			t.Fatalf("%s accepted trailing seal", name)
 		}
 	}
+}
+
+func TestRustOneTierVerdicts(t *testing.T) {
+	replayVerdicts(t, loadFixtureSet(t, "testdata/one-tier", 14), "testdata/one-tier-components.json")
 }

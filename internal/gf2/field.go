@@ -1,5 +1,5 @@
 // Binary-field arithmetic adapted from the existing Go port. Parameters match
-// primitives/field at da5c964831c993b011464e4fd4a573b7172d5295. See NOTICE.
+// the pinned leanVM primitives/field implementations. See UPSTREAM.md and NOTICE.
 package gf2
 
 import "math/bits"
