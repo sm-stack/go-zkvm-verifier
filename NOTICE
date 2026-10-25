@@ -1,0 +1,26 @@
+stark-go-verify
+
+Go verifier sources, original fixtures, and Rust generation tools were extracted
+and adapted from the Optimism source tree at commit
+28c4c5b77f7b713ac081e40963eead49c26e2c18.
+Copyright 2020-2025 Optimism. MIT license retained verbatim in LICENSE.
+Original contributions include work by sm-stack and credited collaborators in
+the source repository history. See UPSTREAM.md for original paths and changes.
+
+leanVM algorithms and guest artifacts derive from sm-stack/leanVM at
+c3fc7b2a9195ed995f7f7e9f8245ad6e8a4dfb14.
+Copyright (c) 2026 leanEthereum.
+Upstream MIT and Apache-2.0 license texts are retained in LICENSES/leanVM-*.
+
+SP1 algorithms, generated constraints/constants and proof artifacts derive from
+Succinct Labs SP1 6.8.1, commit c84ada1ed5911f28c4d3c9d0ed2f9e6cd7edb824.
+Copyright (c) 2023 Succinct Labs. MIT OR Apache-2.0.
+Upstream texts retained in LICENSES/SP1-*; the MIT option is used for extraction.
+
+Runtime Go dependencies are resolved through go.mod/go.sum, not vendored:
+golang.org/x/crypto and x/sys (Go Authors, BSD-3-Clause),
+lukechampine.com/blake3 (Luke Champine, MIT), and its cpuid dependency
+(Klaus Post, MIT). Test-only dependencies retain their respective module licenses.
+
+Optimism extraction commit IDs record local source history. Public availability
+of those commits is not required for building or testing this distribution.

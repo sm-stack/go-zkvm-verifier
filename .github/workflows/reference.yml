@@ -1,0 +1,22 @@
+name: upstream-reference
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    env:
+      GOMAXPROCS: '2'
+      CARGO_BUILD_JOBS: '2'
+      RAYON_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: '1.99.1'
+      - run: python3 tools/check_artifacts.py
+      - run: python3 tools/gen_poseidon2.py --check
+      - run: python3 tools/regenerate.py --check

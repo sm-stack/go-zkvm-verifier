@@ -1,0 +1,62 @@
+{
+  "leanvm/testdata/fibonacci-1000.output": {
+    "bytes": 32,
+    "sha256": "f0e9ff6ace1253f3781ae1e06002e7de3d017daf3d7fd96c2b1830bebf59e293"
+  },
+  "leanvm/testdata/fibonacci-1000.proof": {
+    "bytes": 254334,
+    "sha256": "62e87535c0071db88fdd2f7f04d75a7e71bccdcefaa253cb9c12f49d658f5e3c"
+  },
+  "leanvm/testdata/fibonacci.elf": {
+    "bytes": 10680,
+    "sha256": "c268af68c5aee0a1473fa18e30b23e6cba026e5023a39dd0ad27d01a209c501e"
+  },
+  "leanvm/testdata/preimage-40000.output": {
+    "bytes": 32,
+    "sha256": "79aa90335246448e3a18007cb7edb548a9ca5247c586d844df12516b777dbeb0"
+  },
+  "leanvm/testdata/preimage-40000.proof": {
+    "bytes": 196094,
+    "sha256": "12594870253e6a7c1192c581a48cdc9a64319f39f641076fd01a87367a307c61"
+  },
+  "leanvm/testdata/preimage.elf": {
+    "bytes": 14984,
+    "sha256": "951dc3c423aca2f659f75806e826dff76a55b0a6a09a1267fe33737c5459f5d7"
+  },
+  "leanvm/testdata/vectors.json": {
+    "bytes": 337341,
+    "sha256": "4ae760620249c639130c30eb3e124a9c15c58a6d4fd8a09182e1f868d68a3189"
+  },
+  "sp1/compress_machine_gen.go": {
+    "bytes": 70670,
+    "sha256": "cb4e4cd0cd2911fb6ebf9c8e648652c824b8032f501f5df04f192f66f40ec4ad"
+  },
+  "sp1/poseidon2_fast_gen.go": {
+    "bytes": 7209,
+    "sha256": "2840d85d7cebf3b3f91e6de36c006b467a18ea76069300692110541d45eb898e"
+  },
+  "sp1/testdata/fixture/proof.bin.gz": {
+    "bytes": 805375,
+    "sha256": "ff3358c423b22388c990b8771820812f61816f05069fab0220e65f7f0f2d4841"
+  },
+  "sp1/testdata/fixture/public_values.bin": {
+    "bytes": 16,
+    "sha256": "32f135507cf4eba17f3c4fcd7db04b6c6b4c1273622fdf04caed44cfe681111e"
+  },
+  "sp1/testdata/fixture/vkey_hash.bin": {
+    "bytes": 32,
+    "sha256": "f4289a330fb061302afb24ee1498a57ae1d73de67088e2dfde0fb4d8be298e72"
+  },
+  "sp1/testdata/mutations.json": {
+    "bytes": 33646,
+    "sha256": "53855214e7c487844a37ebf14a620cfa988c7dae15e97cc11eb3b5aa1dce46b3"
+  },
+  "sp1/testdata/statements.json": {
+    "bytes": 798,
+    "sha256": "5450a5cc701dba91766a9449948fd7e7bddd984cf92fdf4be30feefa3fd3ae36"
+  },
+  "sp1/testdata/vectors.json": {
+    "bytes": 43040,
+    "sha256": "0299ca77a68733c53a54f3c71c98644c7255f889ba61d4ad5d44281cbfe75c85"
+  }
+}

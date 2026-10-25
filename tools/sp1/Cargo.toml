@@ -1,0 +1,24 @@
+[package]
+name = "sp1-reference"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+[dependencies]
+bincode = { version = "=2.0.1", features = ["alloc", "serde"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+alloy-primitives = "=1.7.3"
+sp1-verifier = { version = "=6.8.1", default-features = false, features = ["full"] }
+slop-air = { version = "=6.8.1", default-features = false }
+slop-algebra = { version = "=6.8.1", default-features = false }
+slop-basefold = { version = "=6.8.1", default-features = false }
+slop-challenger = { version = "=6.8.1", default-features = false }
+slop-koala-bear = { version = "=6.8.1", default-features = false }
+slop-matrix = { version = "=6.8.1", default-features = false }
+slop-multilinear = { version = "=6.8.1", default-features = false }
+slop-symmetric = { version = "=6.8.1", default-features = false }
+slop-uni-stark = { version = "=6.8.1", default-features = false }
+sp1-hypercube = { version = "=6.8.1", default-features = false }
+sp1-primitives = { version = "=6.8.1", default-features = false }
+sp1-recursion-executor = { version = "=6.8.1", default-features = false }
+sp1-recursion-machine = { version = "=6.8.1", default-features = false }
+[workspace]

@@ -1,0 +1,8 @@
+[package]
+name = "leanvm-reference"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+[dependencies]
+leanvm = { git = "https://github.com/sm-stack/leanVM", rev = "c3fc7b2a9195ed995f7f7e9f8245ad6e8a4dfb14" }
+[workspace]
