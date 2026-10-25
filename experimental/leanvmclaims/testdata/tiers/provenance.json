@@ -1,0 +1,55 @@
+{
+  "upstream_commit": "da5c964831c993b011464e4fd4a573b7172d5295",
+  "generator": "tools/leanvm-mixed/src/bin/tier_proofs.rs",
+  "workers": 2,
+  "files": {
+    "class-key.bin": {
+      "bytes": 40046448,
+      "sha256": "8a96dd0f1f9f3a53795537dca71c2949632885dd01538e1f3f79a5a4b052b14a"
+    },
+    "class-key.digest": {
+      "bytes": 64,
+      "sha256": "01a983e2da3cd58cd665dd019f9dcbbde15faee2c6cfe9cb98cd49511d97796d"
+    },
+    "class-config.json": {
+      "bytes": 335,
+      "sha256": "c2e1ec152139298f1c81d427c646e425cb2784e529e2447679d0071b6026d7c5"
+    },
+    "first/root.bin": {
+      "bytes": 256395,
+      "sha256": "f4886e20415faf8ef76571183aa532dcde5e161a78103ef2b764e8036743baea"
+    },
+    "first/claims.bin": {
+      "bytes": 172,
+      "sha256": "e44e4ad77cb8c4d4026c5681326df17b46523506d025d65e044fbda2de23ea4e"
+    },
+    "first/seal.bin": {
+      "bytes": 8,
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+    },
+    "small-node/root.bin": {
+      "bytes": 257355,
+      "sha256": "f98d2b05b64a2f9a2f587b201c07639e835a0caf505528991c8f536dc27f9dc7"
+    },
+    "small-node/claims.bin": {
+      "bytes": 172,
+      "sha256": "e44e4ad77cb8c4d4026c5681326df17b46523506d025d65e044fbda2de23ea4e"
+    },
+    "small-node/seal.bin": {
+      "bytes": 331352,
+      "sha256": "37826026ba6ce8194bede42eb075e43094e40e51b781aa9bea4ed4e719b57d92"
+    },
+    "wide/root.bin": {
+      "bytes": 256875,
+      "sha256": "65e0828ada7d5333e99ad2f250d4ff94c5738001b2a1aeed18eb550570683e74"
+    },
+    "wide/claims.bin": {
+      "bytes": 340,
+      "sha256": "827e2bf1cc6c865684ded9bf162820aec89b8fc1bc1a51626c58e2adfb9328a5"
+    },
+    "wide/seal.bin": {
+      "bytes": 331832,
+      "sha256": "fdcb531a62de4fc96d450be3983b9b5e1b3a97781a4dd565c4ae12f0e2f0e9e3"
+    }
+  }
+}

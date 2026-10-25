@@ -1,4 +1,4 @@
-// Command stark-go-verify verifies leanVM execution or SP1 compressed proofs without CGO.
+// Command stark-go-verify verifies leanVM execution, experimental claim-tree, or SP1 compressed proofs without CGO.
 package main
 
 import (
@@ -18,13 +18,16 @@ func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 // Exit codes: 0 accepted, 1 rejected (including malformed proof/ELF), 2 usage or I/O error.
 func run(args []string, out, diagnostics io.Writer) int {
 	if len(args) == 1 && (args[0] == "-h" || args[0] == "--help") {
-		if _, err := fmt.Fprintln(out, "usage: stark-go-verify {leanvm|sp1} -h"); err != nil {
+		if _, err := fmt.Fprintln(out, "usage: stark-go-verify {leanvm|sp1|leanvm-claims} -h"); err != nil {
 			return 2
 		}
 		return 0
 	}
+	if len(args) > 0 && args[0] == "leanvm-claims" {
+		return runLeanVMClaims(args[1:], out, diagnostics)
+	}
 	if len(args) == 0 || (args[0] != "leanvm" && args[0] != "sp1") {
-		fmt.Fprintln(diagnostics, "usage: stark-go-verify {leanvm -elf FILE -output FILE | sp1 -vkey FILE -public-values FILE} -proof FILE")
+		fmt.Fprintln(diagnostics, "usage: stark-go-verify {leanvm -elf FILE -output FILE | sp1 -vkey FILE -public-values FILE} -proof FILE; leanvm-claims -h")
 		return 2
 	}
 	fs := flag.NewFlagSet(args[0], flag.ContinueOnError)

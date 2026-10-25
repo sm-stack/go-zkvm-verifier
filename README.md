@@ -15,8 +15,10 @@ source only and may use one additional worker for large Merkle batches when
 | `leanvm` | sm-stack/leanVM fork 0.1.0, commit `c3fc7b2a9195ed995f7f7e9f8245ad6e8a4dfb14` | RV64 guest ELF + 32 output bytes; LVMP version 1 |
 | `sp1` | SP1 6.8.1, commit `c84ada1ed5911f28c4d3c9d0ed2f9e6cd7edb824` | program verifying-key digest + public values; bincode `SP1Proof::Compressed` |
 
-The `leanvm` package targets a specific sm-stack fork revision, not upstream
-leanVM main. Compatibility with other commits is not promised.
+The `leanvm` package also targets a specific sm-stack fork revision, not
+upstream leanVM main. Neither leanVM package promises compatibility with other
+commits. The custom claim-tree protocol is documented separately under
+[experimental extensions](#experimental-extension-leanvm-claim-trees).
 
 SP1 uses KoalaBear, the pinned recursion-key tree, and the layout **without
 `mprotect`**. Core, Plonk, Groth16, other SP1 releases, and proof generation are
@@ -129,3 +131,41 @@ The `leanvm` and `sp1` CLI subcommands cap variable-sized inputs at 64 MiB (SP1 
 fixed-size statements with a 32-byte limit. `-h` exits 0; output write failures
 exit 2. See UPSTREAM.md for differences from upstream's raw API and ELF
 symbol-search compatibility.
+
+
+## Experimental extension: leanVM claim trees
+
+`experimental/leanvmclaims` verifies sealed claim-tree roots that aggregate
+execution claims from multiple programs. It targets the **sm-stack custom fork**
+`op-stack/mixed-program-tree` at commit
+`da5c964831c993b011464e4fd4a573b7172d5295` (package version 0.1.0).
+It is not a verifier for upstream leanVM main and is separate from the
+standalone execution-proof API. Its API and supported protocol may change.
+
+Load the authenticated class once, then reuse the verifier concurrently:
+
+```go
+import "github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims"
+
+v, err := leanvmclaims.NewClassVerifier(classKeyBytes, trustedClassDigest, expectedClass)
+if err != nil { return err }
+return v.VerifySealed(rootBytes, claimSetBytes, sealBytes)
+```
+
+`expectedClass` is a `leanvmclaims.ClassConfig` containing program dimensions, leaf
+heights, rates, arities and claim capacities. Both it and `trustedClassDigest`
+must be trusted independently of submitted bytes. The root verifier checks
+first-level and one-/two-tier mixed trees; leaf proving/verification and
+same-program trees are outside this API.
+
+```sh
+stark-go-verify leanvm-claims -class-key class-key.bin -digest TRUSTED_64_HEX_DIGEST \
+  -class expected-class.json -root root.bin -claims claims.bin -seal seal.bin
+```
+
+The JSON uses `ClassConfig` field names (`LogBytecode`, `LogRAM`, `LogAdvice`,
+`ImageWords`, `LeafHeights`, `LeafRate`, `Arity0`, `Arity`, `TreeRate`, `Claims`,
+`Groups`, optional `Small` with `Arity`/`Claims`/`Groups`). Files are raw upstream
+encodings. Exit codes remain 0 accepted, 1 rejected, 2 usage/I/O error; help is 0.
+The `leanvm-claims` subcommand adds no byte-size cap; services must budget resources for
+their trusted class. [Full protocol, fixtures and reproduction](experimental/leanvmclaims/PORTING.md).

@@ -24,3 +24,13 @@ lukechampine.com/blake3 (Luke Champine, MIT), and its cpuid dependency
 
 Optimism extraction commit IDs record local source history. Public availability
 of those commits is not required for building or testing this distribution.
+
+The experimental/leanvmclaims verifier, components and Rust fixtures are derived from
+sm-stack/leanVM commit da5c964831c993b011464e4fd4a573b7172d5295 (MIT).
+Compact zero-column fixtures are for loader tests only, not genuine circuit keys.
+
+The mixed PCS port retains upstream credits to succinctlabs/flock (flock-core,
+MIT OR Apache-2.0) and bcc-research/bolt-rs (MIT). Copyright (c) 2026 Bain Capital
+Crypto, LP and Ron Rothblum; modifications copyright 2026 Succinct Labs,
+Benedikt Bunz, William Wang. The MIT option is used; see source headers and
+LICENSES/leanVM-* for the upstream license texts.

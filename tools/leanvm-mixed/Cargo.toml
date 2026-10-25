@@ -1,0 +1,18 @@
+[package]
+name = "leanvm-mixed-reference"
+version = "0.1.0"
+default-run = "leanvm-mixed-reference"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+flock = { git = "https://github.com/sm-stack/leanVM", rev = "da5c964831c993b011464e4fd4a573b7172d5295", features = ["test-util"] }
+pcs = { git = "https://github.com/sm-stack/leanVM", rev = "da5c964831c993b011464e4fd4a573b7172d5295" }
+primitives = { git = "https://github.com/sm-stack/leanVM", rev = "da5c964831c993b011464e4fd4a573b7172d5295" }
+fiat_shamir = { git = "https://github.com/sm-stack/leanVM", rev = "da5c964831c993b011464e4fd4a573b7172d5295" }
+leanvm = { git = "https://github.com/sm-stack/leanVM", rev = "da5c964831c993b011464e4fd4a573b7172d5295" }
+parallel = { git = "https://github.com/sm-stack/leanVM", rev = "da5c964831c993b011464e4fd4a573b7172d5295" }
+serde_json = "1"
+flate2 = "1"
+
+[workspace]

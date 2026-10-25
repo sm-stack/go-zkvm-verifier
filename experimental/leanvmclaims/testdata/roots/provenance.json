@@ -1,0 +1,55 @@
+{
+  "upstream_commit": "da5c964831c993b011464e4fd4a573b7172d5295",
+  "example": "crates/leanvm_core/examples/mixed_program_tree.rs",
+  "source_adjustment": "parallel pool 16 -> 2 workers only",
+  "files": {
+    "class-key.bin": {
+      "bytes": 25282600,
+      "sha256": "c1c6ab36de83486b70dbac8e1fd9239c51a6339bc8cb935d9be22cdf0a8d7f08"
+    },
+    "class-key.digest": {
+      "bytes": 64,
+      "sha256": "03daa7f5f231cc721506f84e20ddf972f2db7af00398e29e451144fd12bb95f8"
+    },
+    "class.bin": {
+      "bytes": 176,
+      "sha256": "b69671179bd8d70b9794211f989e1c6e1cce44c2dbdb795fd1b4a5f384139a34"
+    },
+    "distinct-1/claims.bin": {
+      "bytes": 184,
+      "sha256": "5e68c0dfb1021c82af9c5faef5aeabc4602635815c3c5db7d615b6980a152d66"
+    },
+    "distinct-1/root.bin": {
+      "bytes": 269631,
+      "sha256": "d3bfe26fff4365c5459786f383ca273fd457568f7f9c0b1b6b233124fe9680fb"
+    },
+    "distinct-1/seal.bin": {
+      "bytes": 165744,
+      "sha256": "c5831c6d7205a910a778302739c71cd2b31b8c073d302aeb50cb11b281811478"
+    },
+    "distinct-2/claims.bin": {
+      "bytes": 236,
+      "sha256": "2e2d6e9a2b5d040c1e3f1bbf8083ed4a3c4e92acfc89b7d9266363ed31e328eb"
+    },
+    "distinct-2/root.bin": {
+      "bytes": 268863,
+      "sha256": "52a0a73ee4780b34451ee91c07f26163c218095c41d1daa3095c16e48fde94c5"
+    },
+    "distinct-2/seal.bin": {
+      "bytes": 166096,
+      "sha256": "aa356fb07150c423b15c861f937cbb2707882c889da6a89087f83cba1fd59e43"
+    },
+    "distinct-4/claims.bin": {
+      "bytes": 340,
+      "sha256": "80963b5a49e368bfda0791321001cf5cbe51a25cca30a9f5f9e4c3db26816e84"
+    },
+    "distinct-4/root.bin": {
+      "bytes": 269215,
+      "sha256": "7f8bd02a82213940ce2ba412b65daa89ca04b67b3cc26eb1fe0500ae7fbf7bab"
+    },
+    "distinct-4/seal.bin": {
+      "bytes": 166192,
+      "sha256": "546fed27a4f5e57142e9934eb92c25356a8c4984126bcc9cfc16b2a64f460a00"
+    }
+  }
+}

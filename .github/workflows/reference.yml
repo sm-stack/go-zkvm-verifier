@@ -20,3 +20,4 @@ jobs:
       - run: python3 tools/check_artifacts.py
       - run: python3 tools/gen_poseidon2.py --check
       - run: python3 tools/regenerate.py --check
+      - run: python3 tools/leanvm-mixed/regenerate.py --check

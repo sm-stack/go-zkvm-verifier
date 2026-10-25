@@ -48,3 +48,21 @@ RAYON_NUM_THREADS=1 tools/leanvm/target/release/examples/benchmark_verify preima
 # from sp1/testdata/fixture.
 RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 ```
+
+## Experimental claim trees
+
+Same machine, timing method and single-worker settings as above. The class key
+is 25,282,600 bytes; verification uses the distinct-4 root. Class loading owns a
+copy of the key; verification reuses the loaded class. Fixture I/O is excluded.
+
+| Operation | Median | Batch range | Bytes/op | Allocs/op |
+| --- | ---: | ---: | ---: | ---: |
+| Load authenticated class | 28.989 ms | 28.835–29.431 ms | 25,316,784 | 50 |
+| Verify sealed claim-tree root | 58.148 ms | 57.510–59.644 ms | 13,732,160 | 2,768 |
+
+The experimental package uses portable scalar field arithmetic.
+
+```sh
+CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
+  -run '^$' -bench 'Benchmark(ClassLoad|VerifySealed)$' -benchmem -benchtime=20x -count=5
+```

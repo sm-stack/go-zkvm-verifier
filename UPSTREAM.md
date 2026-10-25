@@ -196,3 +196,14 @@ introduced. Regenerate with `go generate ./sp1`, then update artifact hashes wit
 `python3 tools/check_artifacts.py --update`. Check without modifying files with
 `python3 tools/gen_poseidon2.py --check`. The file is included in artifacts.json.
 Scalar reference permutation and bit-serial field arithmetic are tested separately.
+
+## Experimental leanVM claim trees (custom fork protocol)
+
+`experimental/leanvmclaims` supports sm-stack/leanVM package 0.1.0 at
+`da5c964831c993b011464e4fd4a573b7172d5295`, branch
+`op-stack/mixed-program-tree`. It authenticates LVMXCK01 class keys, LVMT v20
+roots and framed mixed-tree-seal/v2 seals. The standalone leanVM and SP1 pins above are unchanged. See
+[the experimental claim-tree verifier documentation](experimental/leanvmclaims/PORTING.md) for the complete
+Go/Rust source mapping, fixture licensing, regeneration commands, scope and
+resource policy. Full verification includes recursion, carried matrix claims
+and fixed-polynomial openings; loader/component checks alone do not accept roots.

@@ -62,3 +62,18 @@ CGO_ENABLED=0 GOMAXPROCS=2 go test ./sp1 -run '^$' -fuzz '^FuzzVerify$' -fuzztim
 Additional targets cover decoders, arithmetic and permutation equivalence.
 Performance measurements and benchmark commands are in [PERFORMANCE.md](PERFORMANCE.md).
 Security assumptions are in [README.md](README.md#security-assumptions-and-limits).
+
+## Experimental claim trees
+
+`experimental/leanvmclaims` replays 248 Rust root/seal verdicts for one-tier
+1/2/4-program roots and two-tier first/small-node/Wide roots. The upstream
+forged-wrap regression exercises a valid recursion proof rejected by its Wide
+seal. Component vectors check transcripts, fields, layouts, flock and PCS.
+
+```sh
+python3 tools/leanvm-mixed/regenerate.py --check
+CGO_ENABLED=0 GOMAXPROCS=2 go test ./experimental/leanvmclaims -run '^$' -fuzz '^FuzzVerifySealed$' -fuzztime 30s -parallel 1
+```
+
+[PORTING.md](experimental/leanvmclaims/PORTING.md) describes the custom protocol,
+fixtures and explicit proof-generation commands.
