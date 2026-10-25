@@ -163,45 +163,32 @@ The reference workflow regenerates Rust artifacts on pull requests or manual run
 
 ## Experimental extension: leanVM claim trees
 
-`experimental/leanvmclaims` verifies sealed tree roots that aggregate execution
-claims from multiple programs. It targets the sm-stack custom fork
-`op-stack/mixed-program-tree` at **`da5c964831c993b011464e4fd4a573b7172d5295`**
-(package version 0.1.0). Its API and supported protocol may change.
+`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental.
 
-Load an authenticated class once, then reuse the verifier concurrently:
+Authenticate a class key once, then reuse the verifier concurrently:
 
 ```go
-import "github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims"
-
-v, err := leanvmclaims.NewClassVerifier(classKeyBytes, trustedClassDigest, expectedClass)
+v, err := leanvmclaims.NewClassVerifier(classKeyBytes, trustedClassDigest)
 if err != nil {
     return err
 }
-return v.VerifySealed(rootBytes, claimSetBytes, sealBytes)
+claims, err := leanvmclaims.ClaimsFromStatements(statements)
+if err != nil {
+    return err
+}
+return v.VerifySealed(claims, rootBytes, sealBytes)
 ```
 
-Both the digest and `expectedClass` configuration must be trusted independently
-of submitted bytes. The package checks first-level and one-/two-tier roots;
-leaf proof verification and same-program trees are outside its scope.
+`statements` is a canonical `[]leanvmclaims.Statement`, with `[32]byte` program and member digests. The caller pins the class-key digest independently, authorizes program identities, and supplies its intended members. Configuration comes from the authenticated key. The package verifies root proofs and seals; proving, leaf-proof verification and same-program trees are outside its scope.
 
 ```sh
 bin/stark-go-verify leanvm-claims -class-key class-key.bin -digest TRUSTED_64_HEX_DIGEST \
-  -class expected-class.json -root root.bin -claims claims.bin -seal seal.bin
-```
-
-Tests replay 248 Rust root/seal verdicts covering 1/2/4-program roots and
-first/small-node/Wide roots, plus an upstream forged-wrap regression.
-Component vectors cover fields, transcripts, layouts, flock and PCS.
-
-```sh
+  -root root.bin -claims claims.bin -seal seal.bin
 python3 tools/leanvm-mixed/regenerate.py --check
 CGO_ENABLED=0 GOMAXPROCS=2 go test ./experimental/leanvmclaims -run '^$' -fuzz '^FuzzVerifySealed$' -fuzztime 30s -parallel 1
 ```
 
-Invalid class configuration, class key or trusted digest exits **2**; rejected
-root/claims/seal inputs exit **1**. The command adds no byte-size cap. See
-[PORTING.md](experimental/leanvmclaims/PORTING.md) for the class configuration,
-wire format, fixture provenance and proof-generation commands.
+Class-key or digest errors exit **2**; rejected root/claims/seal inputs exit **1**. The command adds no byte-size cap. See [PORTING.md](experimental/leanvmclaims/PORTING.md) for the wire format, integration adapter, source mapping and fixture generation.
 
 ## Security assumptions and limits
 

@@ -202,8 +202,8 @@ Scalar reference permutation and bit-serial field arithmetic are tested separate
 ## Experimental leanVM claim trees (custom fork protocol)
 
 `experimental/leanvmclaims` supports sm-stack/leanVM package 0.1.0 at
-`da5c964831c993b011464e4fd4a573b7172d5295`, branch
-`op-stack/mixed-program-tree`. It authenticates LVMXCK01 class keys, LVMT v20
+`59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`, branch
+`op-stack/claim-set-leaves`. It authenticates LVMXCK02 class keys, LVMT v21
 roots and framed mixed-tree-seal/v2 seals. The standalone leanVM and SP1 pins above are unchanged. See
 [the experimental claim-tree verifier documentation](experimental/leanvmclaims/PORTING.md) for the complete
 Go/Rust source mapping, fixture licensing, regeneration commands, scope and

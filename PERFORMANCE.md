@@ -51,17 +51,32 @@ RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 
 ## Experimental claim trees
 
-Same machine, timing method and single-worker settings as above. The class key
-is 25,282,600 bytes; verification uses the distinct-4 root. Class loading owns a
-copy of the key; verification reuses the loaded class. Fixture I/O is excluded.
+Production class at `59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`: 60,027,800 key bytes, two leaf classes, capacity 4097, 357 claims in four groups, large-tier root. Same host as above. Rust and Go ran sequentially with one worker each; five process invocations, 100 warmed verification iterations each. Values below are medians; class loading is cold once per process and includes Go's lazy circuit metadata initialization. File I/O is excluded from times.
 
-| Operation | Median | Batch range | Bytes/op | Allocs/op |
-| --- | ---: | ---: | ---: | ---: |
-| Load authenticated class | 28.946 ms | 28.848–30.785 ms | 25,315,632 | 49 |
-| Verify sealed claim-tree root | 20.470 ms | 20.308–20.702 ms | 13,732,160 | 2,768 |
+| Operation | Go | Rust |
+| --- | ---: | ---: |
+| Checked class load | 121.926 ms | 97.673 ms |
+| Sealed root verification | 29.739 ms | 5.412 ms |
+| Direct root verification | not exposed | 18.212 ms |
 
-The experimental package uses the same `internal/gf2` PMULL dispatch and
-portable fallback as standalone leanVM.
+Go sealed verification allocated 18,465,008 bytes and 3,711 objects per operation. Its batch means ranged from 29.693 to 29.825 ms, versus Rust's 5.385 to 5.480 ms. Go was about 5.5 times slower on this fixture. These are finite local measurements, not a general performance bound. The Go API decodes root/seal bytes on each call; the Rust tool verifies already-decoded objects. Claim decoding is outside both loops.
+
+A separate load-only process took 122.968 ms, allocated 75,707,016 Go heap bytes during construction, and ended with 76,603,392 heap-in-use bytes. `/usr/bin/time -l` measured a **129,794,048-byte peak process RSS**. RSS includes the input key, runtime and metadata; it is not an isolated constructor allocation count. The constructor copies its key, and the input can subsequently be released.
+
+Reproduce using an uncommitted output directory:
+
+```sh
+python3 tools/leanvm-mixed/generate_production.py /tmp/claim-production
+CGO_ENABLED=0 go build -o /tmp/benchmark-claims ./tools/benchmark-claims
+cargo build --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml --bin benchmark
+# Run sequentially, five times each:
+GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claim-production/two-class -n 100
+tools/leanvm-mixed/target/release/benchmark /tmp/claim-production/two-class
+# macOS peak process RSS for class loading:
+GOMAXPROCS=1 /usr/bin/time -l /tmp/benchmark-claims -mode load -dir /tmp/claim-production/two-class
+```
+
+Generation uses two workers and omits the example's independent common-class comparison; the benchmark tools use one worker. The original example's printed verification samples are not used for the table. To benchmark the committed small corpus:
 
 ```sh
 CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
