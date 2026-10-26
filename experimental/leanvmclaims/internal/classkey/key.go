@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/blake2s"
 )
 
-const Pin = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6"
+const Pin = "3e7da4e783dad4c39115e5a231849e52cae5b22f"
 const Domain = "leanvm/mixed-class-key/v4"
 
 var ErrDigest = errors.New("leanvmclaims: class-key digest mismatch")
@@ -80,7 +80,11 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		return nil, ErrDigest
 	}
 	r := reader{data: data}
-	if !bytes.Equal(r.take(8), []byte("LVMXCK04")) || r.word() != 1 {
+	if !bytes.Equal(r.take(8), []byte("LVMXCK04")) {
+		return nil, ErrEncoding
+	}
+	placement := ZKPlacement(r.word())
+	if placement > Isolated {
 		return nil, ErrEncoding
 	}
 	const recordBytes = uint64(144)
@@ -88,7 +92,7 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 	if r.err != nil || nLeaves == 0 || nLeaves > uint64(len(data)-r.pos)/recordBytes {
 		return nil, ErrEncoding
 	}
-	config := Config{Leaves: make([]LeafClass, int(nLeaves))}
+	config := Config{Placement: placement, Leaves: make([]LeafClass, int(nLeaves))}
 	for i := range config.Leaves {
 		c := &config.Leaves[i]
 		c.LogBytecode, c.LogRAM, c.LogAdvice, c.ImageWords, c.MaxMembers = r.word(), r.word(), r.word(), r.word(), r.word()
@@ -109,7 +113,7 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 	if r.word() != 2 || config.check() != nil {
 		return nil, ErrEncoding
 	}
-	zkCount := config.zkCount()
+	zkCount := config.isolatedZKCount()
 	tiers := 1 + small + uint64(zkCount)
 	if r.word() != tiers {
 		return nil, ErrEncoding
@@ -135,7 +139,7 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		extra = 2
 	}
 	// Plain count is N + arity - 1, or N + small arity + 1 with a large tier.
-	// Each ZK class moves its First to a dedicated tier and adds one LeafWrap.
+	// Each isolated ZK class moves its First to a dedicated tier and adds one LeafWrap.
 	if arity-1 > ^uint64(0)-nLeaves-extra-uint64(zkCount) {
 		return nil, ErrEncoding
 	}

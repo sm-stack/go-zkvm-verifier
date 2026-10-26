@@ -30,7 +30,7 @@ func TestRustMerkle(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "../../testdata/merkle.json", &vectors)
-	if vectors.Pin != "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" {
+	if vectors.Pin != "3e7da4e783dad4c39115e5a231849e52cae5b22f" {
 		t.Fatal("stale pin")
 	}
 	for i, c := range vectors.Openings {

@@ -1,0 +1,53 @@
+{
+  "upstream_commit": "3e7da4e783dad4c39115e5a231849e52cae5b22f",
+  "files": {
+    "README.md": {
+      "bytes": 1068,
+      "sha256": "f9f3791286017671815f8eb2027fc39e944164ec10a5c564dd8e3b354a77708a"
+    },
+    "claims.bin": {
+      "bytes": 38056,
+      "sha256": "9f1895b6cfa26665888750b262a853019e2abdaad2ac0c30db7e7adf1e41d13b"
+    },
+    "class-key.bin": {
+      "bytes": 936,
+      "sha256": "f490108df949db8c4bb8c3581f4626ddc55b27fd79d6d462c48f0319db6e1699"
+    },
+    "class-key.digest": {
+      "bytes": 32,
+      "sha256": "d9c3162fc6225817533a0002cb8fb0525c05bb1283715f05bd5552e152e5f36d"
+    },
+    "isolated-key.bin": {
+      "bytes": 1072,
+      "sha256": "b6d130415b7cf5f00c5a0579b58aaf2615b5e6031ad8eaeaa12bfbcc0ddb6b61"
+    },
+    "isolated-key.digest": {
+      "bytes": 32,
+      "sha256": "62b72a91c027895cf765b37a018f84928b1e3da9053aee878e43891a5d449efb"
+    },
+    "opening-dropped.bin": {
+      "bytes": 2464,
+      "sha256": "379e957b56fd8043b8dd975150cd2f3f746648cc689325dbdcf416966e12d668"
+    },
+    "root.bin": {
+      "bytes": 160715,
+      "sha256": "2e06495607266b3a62a1ca0607c0a15346ff233ebdf2a25ab2ded43f7c9bd288"
+    },
+    "seal.bin": {
+      "bytes": 194284,
+      "sha256": "6d2ccf2bff2947b9d3221760a3d7a9177d86617bd5050c4d33be925a4abf6117"
+    },
+    "tier-bit-flipped.bin": {
+      "bytes": 160715,
+      "sha256": "476f4e4b0818e81c7378e239e122f7984fb1a88cf2b6b0dbae20b6b8737e50c2"
+    },
+    "verdicts.tsv": {
+      "bytes": 467,
+      "sha256": "d615fb76f11316639574f85fbcae52f6f323859695f8f3e79afd7d8db88c77d3"
+    },
+    "wrong.digest": {
+      "bytes": 32,
+      "sha256": "e13b34fbb4f528201d6a5ca230501d76ee204729f71e064f66ca55bf78a34550"
+    }
+  }
+}

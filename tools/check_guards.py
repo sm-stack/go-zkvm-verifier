@@ -94,6 +94,11 @@ mutations += [
  ('experimental/leanvmclaims/claims.go', 'if err := claims.Check(math.MaxUint64, math.MaxUint32); err != nil {', 'if err := claims.Check(math.MaxUint64, math.MaxUint32); false && err != nil {', './experimental/leanvmclaims', 'TestEncodeClaimsCanonical'),
  ('experimental/leanvmclaims/verifier.go', 'if v == nil || v.class == nil {\n\t\treturn ErrClass', 'if false {\n\t\treturn ErrClass', './experimental/leanvmclaims', 'TestNilVerifier'),
 ]
+mutations += [
+ ('experimental/leanvmclaims/verifier.go', 'if v.class.Config.Placement != placement {', 'if false && v.class.Config.Placement != placement {', './experimental/leanvmclaims', 'TestSharedRustMutations'),
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', 'tag = append(tag, byte(config.Placement))', 'tag = append(tag, 1)', './experimental/leanvmclaims', 'TestSharedConformance'),
+ ('experimental/leanvmclaims/internal/recursion/verify.go', 'int(root.Rate)', '1', './experimental/leanvmclaims', 'TestSharedConformance'),
+]
 # A pre-existing failing regression must never count as a caught mutation.
 for package in sorted({case[3] for case in mutations}):
     tests = sorted({case[4] for case in mutations if case[3] == package})

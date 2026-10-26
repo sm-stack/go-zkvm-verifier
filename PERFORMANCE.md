@@ -52,74 +52,73 @@ RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 ## Experimental claim trees
 
 Measured on Apple M4 Pro, macOS arm64, Go 1.26.10 and Rust 1.99.1. Both use
-one worker (`GOMAXPROCS=1`; Rust pool size 1), with default release optimization
-and no custom RUSTFLAGS. Values below are medians of three alternating Go/Rust
-batches of 100 warmed verifications. Both verify the same serialized fixture;
-loading and Go claim decoding occur outside the verification timer.
+one worker (`GOMAXPROCS=1`; Rust pool size 1), default release optimization and
+no custom RUSTFLAGS. Values are medians of three sequential batches of 100
+warmed verifications, alternating binaries. Loading and Go claim decoding are
+outside the verification timer. Rust is pinned to
+`3e7da4e783dad4c39115e5a231849e52cae5b22f`.
 
-The current pin is `fc3fc9ec0ec218d6b5196ecae85a975590729ae6`. All four cases use
-the same 1,288-byte operational class key with digest `5345ead0…`.
+| Binary / fixture | Members | Key | Verify | Go allocation/op |
+| --- | ---: | ---: | ---: | ---: |
+| Go `32f9be6`, isolated mixed-zk | 144 | 1,288 B | 4.796 ms | 8,175,912 B |
+| Current Go, same isolated fixture | 144 | 1,288 B | 4.781 ms | 8,175,912 B |
+| Rust, same isolated fixture | 144 | 1,288 B | 2.730 ms | — |
+| Current Go, shared fixture | 1,168 | 936 B | 3.790 ms | 7,593,256 B |
+| Rust, same shared fixture | 1,168 | 936 B | 2.186 ms | — |
 
-| Fixture | Members | Go | Rust | Go/Rust | Go allocated bytes/op |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| plain-small | 256 | 4.319 ms | 2.526 ms | 1.71× | 7,817,136 |
-| plain-large | 384 | 5.249 ms | 3.016 ms | 1.74× | 8,303,112 |
-| mixed-zk | 144 | 4.945 ms | 2.806 ms | 1.76× | 8,175,912 |
-| one-zk | 16 | 4.928 ms | 2.798 ms | 1.76× | 8,177,720 |
+The isolated Go comparison shows no material regression in these samples.
+The shared Go verifier is about 1.73× the Rust time. Shared and isolated fixtures
+have different programs, member sets, capacity and tree rate (3 versus 1);
+their difference is not a controlled measurement of placement alone.
 
-Go batches ranged 4.317–4.325, 5.246–5.266, 4.939–5.206 and 4.874–4.938 ms,
-respectively. Rust batches ranged 2.479–2.600, 2.996–3.119, 2.798–2.867 and
-2.780–2.815 ms. These local samples are not cross-machine guarantees.
+Shared Go batches ranged 3.727–4.001 ms; Rust ranged 2.149–2.224 ms. Baseline Go
+isolated batches ranged 4.786–4.828 ms and current Go 4.765–4.837 ms. Shared-host
+and startup variation remain; these samples are not cross-machine guarantees.
 
-### Key loading and previous-format baseline
+### Loading and memory
 
-The baseline binary was built from Go commit `02d7ea9b25b2bfaabc388b3ad1028f01857f3e4a`
-before changing the verifier. Its operational v3 fixture has seven members and
-key digest `ce8d9001…`. The compact fixture uses the same class dimensions, but
-different programs/member sets. Verification time is therefore **not** an
-apples-to-apples speedup comparison with that baseline.
-
-| Go measurement | Baseline | Compact key |
+| First load in a new process | Time range | Go allocated bytes |
 | --- | ---: | ---: |
-| Serialized key | 116,251,536 B | 1,288 B |
-| First load in a new process | 191.787 ms | 46.454–50.274 ms |
-| Bytes allocated during first load | 131,953,512 B | about 15,690,600 B |
-| Sealed verify | 6.629 ms (7 members) | see fixture-specific table above |
+| Go `32f9be6`, isolated | 46.439–53.425 ms | about 15,690,800 |
+| Current Go, isolated | 46.069–47.616 ms | about 15,690,300 |
+| Current Go, shared | 46.298–47.794 ms | about 15,664,000 |
+| Rust, shared | 0.529–1.531 ms | — |
 
-First-load allocation excludes the caller's already-read key. It includes the
-one-time decoding of shared circuit metadata, which now dominates Go startup.
-With that metadata initialized, repeated compact-key loads take 21–25 µs,
-69,152 B/op and 106 allocations/op. Rust compact-key load samples were
-0.628–0.910 ms; its descriptor adapter runs before the load timer. Neither
-allocation figures nor Go's heap-in-use counter represent peak RSS.
+First-load allocation excludes the caller's already-read key and includes the
+one-time decoding of shared circuit metadata, which dominates Go startup.
+After metadata initialization, repeated shared-key loads take about 12 µs,
+42,952 B/op and 69 allocations/op.
+Rust's descriptor adapter runs before its load timer. These figures are
+allocated bytes, not peak RSS. Compact verification has no persistent bus scratch
+buffer; `SetScratchCacheLimit` remains a deprecated compatibility no-op.
 
-Compact verification retains no process-wide bus scratch buffer. The deprecated
-`SetScratchCacheLimit` API is a compatibility no-op.
+The shared serialized root and seal total 354,999 bytes. With the separate
+38,056-byte claims encoding, the total is 393,055 bytes. Transport/blob budgeting
+belongs to the embedding application; the verifier adds no transport-size cap.
 
 ### Reproduce
 
-Extract one checked-in fixture into a raw artifact directory:
+Extract the shared fixture into a raw artifact directory:
 
 ```sh
 python3 - <<'PYTHON'
 import gzip
 from pathlib import Path
-base = Path('experimental/leanvmclaims/testdata/compact')
-out = Path('/tmp/compact-benchmark')
+base = Path('experimental/leanvmclaims/testdata/shared')
+out = Path('/tmp/shared-benchmark')
 out.mkdir(exist_ok=True)
-for name in ['class-key.bin', 'class-key.digest',
-             'mixed-zk/root.bin', 'mixed-zk/claims.bin', 'mixed-zk/seal.bin']:
-    (out / Path(name).name).write_bytes(gzip.decompress((base / (name+'.gz')).read_bytes()))
+for name in ['class-key.bin', 'class-key.digest', 'root.bin', 'claims.bin', 'seal.bin']:
+    (out / name).write_bytes(gzip.decompress((base / (name+'.gz')).read_bytes()))
 PYTHON
 CGO_ENABLED=0 go build -o /tmp/benchmark-claims ./tools/benchmark-claims
-GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/compact-benchmark -n 100
+GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/shared-benchmark -n 100
 cargo run --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml \
-  --bin benchmark -- /tmp/compact-benchmark
+  --bin benchmark -- /tmp/shared-benchmark
 CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
-  -run '^$' -bench '^BenchmarkClassLoad$' -benchmem -count 3
+  -run '^$' -bench '^BenchmarkSharedLoad$' -benchmem -count 3
 ```
 
-Use `plain-small`, `plain-large` or `one-zk` instead of `mixed-zk` for the other
-cases. No proof generation is needed. The baseline fixture and implementation
-can be recovered from the baseline git commit; old formats are not accepted by
-the current verifier.
+For the isolated comparison, use `testdata/compact`, extracting
+`mixed-zk/{root,claims,seal}.bin.gz` to the raw directory alongside its key/digest.
+The baseline binary can be built from git commit `32f9be6` in a separate checkout;
+its verifier does not accept shared keys. No proof generation is needed.

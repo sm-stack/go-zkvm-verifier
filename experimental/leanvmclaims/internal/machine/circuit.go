@@ -51,7 +51,7 @@ var load = sync.OnceValues(func() (*Schema, error) {
 	if e := json.Unmarshal(metadata, &s); e != nil {
 		return nil, e
 	}
-	if s.Pin != "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" || len(s.LeafMinHeights) != 11 || len(s.Circuits) != 21 || len(s.LeafColumns) != 11 || len(s.RegisterBits) != 11 || len(s.CircuitTables) != 21 || s.HashCircuit < 0 || s.HashCircuit >= len(s.Circuits) {
+	if s.Pin != "3e7da4e783dad4c39115e5a231849e52cae5b22f" || len(s.LeafMinHeights) != 11 || len(s.Circuits) != 21 || len(s.LeafColumns) != 11 || len(s.RegisterBits) != 11 || len(s.CircuitTables) != 21 || s.HashCircuit < 0 || s.HashCircuit >= len(s.Circuits) {
 		return nil, errors.New("leanvmclaims: invalid generated circuit metadata")
 	}
 	for i := range s.LeafColumns {

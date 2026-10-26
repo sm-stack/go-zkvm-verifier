@@ -163,7 +163,7 @@ The reference workflow regenerates Rust artifacts on pull requests or manual run
 
 ## Experimental extension: leanVM claim trees
 
-`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`fc3fc9ec0ec218d6b5196ecae85a975590729ae6`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental. It accepts compact v4 class keys for plain and ZK leaf classes, version 22 roots and v3 seals. It verifies the aggregate root, not the ZK leaf proof itself; members, program keys and shapes remain public.
+`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`3e7da4e783dad4c39115e5a231849e52cae5b22f`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental. It accepts compact v4 class keys for plain and ZK leaf classes with shared or isolated ZK placement, version 22 roots and v3 seals. It verifies the aggregate root, not the ZK leaf proof itself; members, program keys and shapes remain public.
 
 Authenticate a class key once, then reuse the verifier concurrently:
 
@@ -179,7 +179,7 @@ if err != nil {
 return v.VerifySealed(claims, rootBytes, sealBytes)
 ```
 
-`statements` is a canonical `[]leanvmclaims.Statement`, with `[32]byte` program and member digests. The caller pins the class-key digest independently, authorizes program identities, and supplies its intended members. Configuration comes from the authenticated key; `v.Config()` returns an independent snapshot for application policy checks. The package verifies root proofs and seals; proving, leaf-proof verification and same-program trees are outside its scope.
+`statements` is a canonical `[]leanvmclaims.Statement`, with `[32]byte` program and member digests. The caller pins the class-key digest independently, authorizes program identities, and supplies its intended members. Configuration comes from the authenticated key; `v.Config()` returns an independent snapshot, including `Placement`. `NewClassVerifierWithPlacement(key, digest, ZKShared)` additionally enforces an explicit placement policy. The package verifies root proofs and seals; proving, leaf-proof verification and same-program trees are outside its scope.
 
 ```sh
 bin/stark-go-verify leanvm-claims -class-key class-key.bin -digest TRUSTED_64_HEX_DIGEST \

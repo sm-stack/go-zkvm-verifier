@@ -34,7 +34,7 @@ func loadVectors(t testing.TB) ([32]byte, []caseVector) {
 		Cases   []caseVector
 	}
 	fixture.JSON(t, "../../testdata/flock.json", &v)
-	if v.Pin != "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" || len(v.Cases) != 3 || len(v.Phi) != 256 {
+	if v.Pin != "3e7da4e783dad4c39115e5a231849e52cae5b22f" || len(v.Cases) != 3 || len(v.Phi) != 256 {
 		t.Fatal("stale or incomplete flock vectors")
 	}
 	for i, w := range v.Phi {

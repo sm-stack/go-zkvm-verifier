@@ -28,8 +28,17 @@ type LeafClass struct {
 	Kind                                                   LeafKind
 }
 
+// ZKPlacement selects whether ZK First circuits share the base tier.
+type ZKPlacement uint64
+
+const (
+	Shared ZKPlacement = iota
+	Isolated
+)
+
 // Config is derived from the authenticated class-key descriptor.
 type Config struct {
+	Placement                               ZKPlacement
 	Leaves                                  []LeafClass
 	Arity0, Arity, TreeRate, Claims, Groups uint64
 	Small                                   *SmallTier
@@ -43,7 +52,7 @@ func appendWords(dst []byte, words ...uint64) []byte {
 	return dst
 }
 func (c Config) check() error {
-	if len(c.Leaves) == 0 || c.TreeRate < 1 || c.TreeRate > 4 || c.Arity0 == 0 || c.Arity < 2 {
+	if c.Placement > Isolated || len(c.Leaves) == 0 || c.TreeRate < 1 || c.TreeRate > 4 || c.Arity0 == 0 || c.Arity < 2 {
 		return ErrClass
 	}
 	for _, leaf := range c.Leaves {
@@ -71,7 +80,8 @@ type Validated struct {
 	ProgramDigest, RootSession, SealSession     [32]byte
 }
 
-// Load mirrors embed.rs::mixed_classes_from_bytes and design.rs::Design::new.
+// Load mirrors embed.rs::mixed_classes_from_bytes_with and Design::new_with_zk,
+// deriving the expected configuration from the authenticated key.
 func Load(data []byte, pin [32]byte) (*Validated, error) {
 	k, err := Decode(data, pin)
 	if err != nil {
@@ -139,7 +149,7 @@ func Load(data []byte, pin [32]byte) (*Validated, error) {
 	tag = append(tag, []byte("/mixed-members/2")...)
 	if config.zkCount() > 0 {
 		tag = append(tag, []byte("/zk-leaves/1")...)
-		tag = append(tag, 1)
+		tag = append(tag, byte(config.Placement))
 		for _, leaf := range config.Leaves {
 			tag = append(tag, byte(leaf.Kind))
 		}
@@ -203,9 +213,9 @@ func (c Config) zkCount() int {
 // by the encoded input, so an authenticated but oversized arity cannot allocate.
 func (c Config) places() []Place {
 	var out []Place
-	zk := c.zkCount()
+	zk := c.isolatedZKCount()
 	for _, l := range c.Leaves {
-		if l.Kind == Plain {
+		if l.Kind == Plain || c.Placement == Shared {
 			out = append(out, Place{0, true})
 		}
 	}
@@ -231,4 +241,11 @@ func (c Config) places() []Place {
 		out = append(out, Place{base + i, true})
 	}
 	return out
+}
+
+func (c Config) isolatedZKCount() int {
+	if c.Placement == Isolated {
+		return c.zkCount()
+	}
+	return 0
 }

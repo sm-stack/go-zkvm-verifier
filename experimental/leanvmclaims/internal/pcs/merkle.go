@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Bain Capital Crypto, LP and Ron Rothblum
 // Modifications copyright 2026 Succinct Labs, Benedikt Bunz, William Wang
 // SPDX-License-Identifier: Apache-2.0 OR MIT
-// Port of leanVM pcs/src/{merkle,verifier}.rs at fc3fc9ec0ec218d6b5196ecae85a975590729ae6.
+// Port of leanVM pcs/src/{merkle,verifier}.rs at 3e7da4e783dad4c39115e5a231849e52cae5b22f.
 package pcs
 
 import (

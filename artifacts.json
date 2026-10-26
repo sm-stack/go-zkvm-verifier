@@ -1,27 +1,27 @@
 {
   "experimental/leanvmclaims/internal/machine/metadata-review.json": {
     "bytes": 8044,
-    "sha256": "e5eb2a7af433ac96ba4c62b37183b22a32d08722184752edc34779c21cba63c8"
+    "sha256": "3ab1e7e195cf53d213f67796e991be36e99e9b6239a90441fe57a1964a590cdb"
   },
   "experimental/leanvmclaims/internal/machine/metadata.json": {
     "bytes": 3241152,
-    "sha256": "558e30b19dc633341ce6e461af96a4d2587e7866721b909e17b2a6abc050eda7"
+    "sha256": "2b9db6fb160700eab0307406fb4b1092cf1f8545487be441299ef9ef79076d91"
   },
   "experimental/leanvmclaims/internal/pcs/config_table_gen.go": {
     "bytes": 9857,
-    "sha256": "4821322e8bc04b5b51c6a5f8c3b09ac4ca07bd2118c740946eb70067c79e08ba"
+    "sha256": "800df625ba8850420e79017130ace753f129bca6b2c539a343d45ffcf7aeca4e"
   },
   "experimental/leanvmclaims/testdata/compact-class-mutations.json": {
     "bytes": 3045,
-    "sha256": "202cfe815fc4cb0c0198ac62b216074bce28d57e7d8a022f8b68cf7bd35ff4f4"
+    "sha256": "3e954b198b78a19fde15dee0370cef8015ddc1a3b504bbad319e51a307ab37e6"
   },
   "experimental/leanvmclaims/testdata/compact-components.json": {
     "bytes": 8769,
-    "sha256": "8f0065d72822c8bb1769e31054f88be037d5052ad99e098fde68aa0fc8f0d581"
+    "sha256": "1d631d3f1a013e4331c2a07d02129f557b16c7a4eff15b917460b1e08d02b016"
   },
   "experimental/leanvmclaims/testdata/compact-mutations.json": {
     "bytes": 3432,
-    "sha256": "be858ee327a930b5bdf87a5e08e62c3eb1be13cea06f36cc207ce401dcc3a6e3"
+    "sha256": "80cced3f90e50b102369fb421708a6d0056b7ead514c28e14e31b4f4676d9abe"
   },
   "experimental/leanvmclaims/testdata/compact/README.md.gz": {
     "bytes": 653,
@@ -93,7 +93,7 @@
   },
   "experimental/leanvmclaims/testdata/compact/provenance.json": {
     "bytes": 2862,
-    "sha256": "4e014576fa47aa3558e2f817a6cc83debc849dd76531fdcab7650ee8e12eb84a"
+    "sha256": "84a30b1ae73c4e7de49de7f26ad27b274dc8d9bbef03f2cfed0d363ab0abfcaf"
   },
   "experimental/leanvmclaims/testdata/compact/tier-bit-flipped.bin.gz": {
     "bytes": 252872,
@@ -109,43 +109,99 @@
   },
   "experimental/leanvmclaims/testdata/field.json": {
     "bytes": 201805,
-    "sha256": "ff3ddc6d286765777fb7d3e0ad7d8dcedd56d2e543b29b20ab6eb8cbd1cdf472"
+    "sha256": "6e6c6ea3decae300374107ecb6ef56ae87eff737843a3d4c0c057f61e0fafbd9"
   },
   "experimental/leanvmclaims/testdata/flock.json": {
     "bytes": 54971,
-    "sha256": "42fd3f369548ca6bc764fe745011add0105c896b40dae799f86582ba1fef627f"
+    "sha256": "1a6264cad3a06af7bde0664c2c714964e34a6d470aacf1d8304f8dab6991dcc3"
   },
   "experimental/leanvmclaims/testdata/layouts.json": {
     "bytes": 52370,
-    "sha256": "063747bccc69e1240ebee0557848f815ebbd99ca17c9312058dfe6842f65275a"
+    "sha256": "56a7042a5a0aa4eae52e6ddbcb96056f87df0ec7e114ee535607e5a84b841561"
   },
   "experimental/leanvmclaims/testdata/matrices.json": {
     "bytes": 77051,
-    "sha256": "aa25c85854f0e38ab816840cf71c24142fc8051ee44687bba34e03bcf55eec19"
+    "sha256": "ccf979ee8c8282a0d855d71ff724a955531e78fd9b9ad9f3c57d536f896dd4d1"
   },
   "experimental/leanvmclaims/testdata/merkle.json": {
     "bytes": 222939,
-    "sha256": "1ce9f1812f5b23647b9742078c24c9efe4edd83e1cd27cd1a1bdcf8be2b22075"
+    "sha256": "04e283919fc081ec7016bc442bc06a91f6b61721033bf402fcd5d22ee3e99b7a"
+  },
+  "experimental/leanvmclaims/testdata/shared-mutations.json": {
+    "bytes": 1038,
+    "sha256": "54995ef074e7b7198ce97c659b74538f63e047908e44991c15d205c50b06e9d6"
+  },
+  "experimental/leanvmclaims/testdata/shared/README.md.gz": {
+    "bytes": 637,
+    "sha256": "46821f2fdbdfd0359bbb3a8cf81b492698fb7c21903203542bc489d352e43916"
+  },
+  "experimental/leanvmclaims/testdata/shared/claims.bin.gz": {
+    "bytes": 16290,
+    "sha256": "95ea4b3e5cbe6d7245c16bd34159c0203d84f8c40fe42e5edb0eebe936963e17"
+  },
+  "experimental/leanvmclaims/testdata/shared/class-key.bin.gz": {
+    "bytes": 244,
+    "sha256": "d8135e4178b0299ca79808f6f74b4718c52bbafebf2da792a0e7cc75b1da352e"
+  },
+  "experimental/leanvmclaims/testdata/shared/class-key.digest.gz": {
+    "bytes": 53,
+    "sha256": "f9c22e6bac7ea3a17290f2eb715bb50f2fed1f071c8f598d0f1df93d0bf59dea"
+  },
+  "experimental/leanvmclaims/testdata/shared/isolated-key.bin.gz": {
+    "bytes": 280,
+    "sha256": "c268c39e95cb39499406c384aad3d06e74d68feb77f49ea2bffb29734bbecfca"
+  },
+  "experimental/leanvmclaims/testdata/shared/isolated-key.digest.gz": {
+    "bytes": 53,
+    "sha256": "cd0f1e438a212a0f9cc12faea8aad92105e51b6a68766f877393e60c96e96530"
+  },
+  "experimental/leanvmclaims/testdata/shared/opening-dropped.bin.gz": {
+    "bytes": 2487,
+    "sha256": "6c8ca2ae4ce8fac2d044663f1984b9ef5226ee44c26078f97fca1512a1160d49"
+  },
+  "experimental/leanvmclaims/testdata/shared/provenance.json": {
+    "bytes": 1698,
+    "sha256": "8f7c1a60da77f37dfc5539ba83a77f0f86b5dd2b6919f6f5abf92dca8bfe0010"
+  },
+  "experimental/leanvmclaims/testdata/shared/root.bin.gz": {
+    "bytes": 153404,
+    "sha256": "3745118f658e61eaa252b5b95a96d6ea70f385a14027e16363db37ddd8e2c239"
+  },
+  "experimental/leanvmclaims/testdata/shared/seal.bin.gz": {
+    "bytes": 170388,
+    "sha256": "73e09d66213e1a5c06aea8c0d39d161d07f354fb4ff5fe90e596aca1c912f077"
+  },
+  "experimental/leanvmclaims/testdata/shared/tier-bit-flipped.bin.gz": {
+    "bytes": 153404,
+    "sha256": "1b13b600bef7cc82432378b522734cf1628259e4a153aca343c56e8bc3c7fcc4"
+  },
+  "experimental/leanvmclaims/testdata/shared/verdicts.tsv.gz": {
+    "bytes": 163,
+    "sha256": "132dab9b713ed4b0109c89846931c4aeb91763c6027103f0ee8e924faf3870b9"
+  },
+  "experimental/leanvmclaims/testdata/shared/wrong.digest.gz": {
+    "bytes": 53,
+    "sha256": "5b6c5cbc974ae066554f92f7a46395f5f8bf837f4e452205f1858f42c0af1df5"
   },
   "experimental/leanvmclaims/testdata/stack.json": {
     "bytes": 354840,
-    "sha256": "dcdd2215a5ff51b11ba5142a545acc34dc5087e3ba45bb8d6fdb29d62894ca70"
+    "sha256": "4aab51ba72d5d16b280e35e18b1c08f969792fde4fc961df916be62ea3d2f6d1"
   },
   "experimental/leanvmclaims/testdata/statements.json": {
     "bytes": 5328,
-    "sha256": "892964ebb034f708f8bd1721b94cdba6a0d17d3d0bd11cf0bb01bf07883ef563"
+    "sha256": "a6bdccf4106f295aacb7e3db9e42a002b3256ec3cc2166d8321cbdba88bf5c6e"
   },
   "experimental/leanvmclaims/testdata/transcript.json": {
     "bytes": 34775,
-    "sha256": "18433151c14f7969b37ac20ab5e9dce33a7710ecaf46ea259d7d0f9077ed2a97"
+    "sha256": "8a33b3f3f80643923bcb75de816ba63bef722db56b2aaf4f281a8bbf3aef188c"
   },
   "experimental/leanvmclaims/testdata/whir.json": {
     "bytes": 324689,
-    "sha256": "c78efc8f851db2d65d07e21a46ea6e1a31febc94d6e78ca7a42edb6565ef0528"
+    "sha256": "e3c26bdd85ddb678b8d509cae607fbac626dc665c1e849c1c168e791265e6dee"
   },
   "experimental/leanvmclaims/testdata/wire.json": {
     "bytes": 14236,
-    "sha256": "8e41b704a1832c191125eda352714ff49740ffd40ddf63c1ea30383914547714"
+    "sha256": "ca4defc1894b40499bd054d3a2e6bce2faaeb7925ac6f882cbc40872c08aff96"
   },
   "leanvm/testdata/fibonacci-1000.output": {
     "bytes": 32,

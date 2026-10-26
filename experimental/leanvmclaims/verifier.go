@@ -25,7 +25,7 @@ type ClassVerifier struct{ class *classkey.Validated }
 // independently trusted digest, then derives its ordered leaf classes and tree
 // configuration. The digest is BLAKE2s-256("leanvm/mixed-class-key/v4" || key).
 // The constructor owns a copy; later caller mutations do not affect verification.
-// Mirrors rec/tree/embed.rs::mixed_classes_from_bytes.
+// Placement, like the rest of the class configuration, is authenticated by the digest.
 func NewClassVerifier(classKey []byte, expectedDigest [32]byte) (*ClassVerifier, error) {
 	k, err := classkey.Load(classKey, expectedDigest)
 	if err != nil {
@@ -118,4 +118,30 @@ func SetScratchCacheLimit(bytes int) error {
 		return errors.New("leanvmclaims: negative scratch cache limit")
 	}
 	return nil
+}
+
+// ZKPlacement selects shared or isolated ZK First circuits.
+type ZKPlacement = classkey.ZKPlacement
+
+const (
+	// ZKShared puts every First circuit in the base tier.
+	ZKShared = classkey.Shared
+	// ZKIsolated adds a dedicated First tier and LeafWrap for each ZK class.
+	ZKIsolated = classkey.Isolated
+)
+
+// NewClassVerifierWithPlacement additionally checks caller-pinned placement,
+// even when the supplied digest genuinely authenticates a different placement.
+func NewClassVerifierWithPlacement(classKey []byte, expectedDigest [32]byte, placement ZKPlacement) (*ClassVerifier, error) {
+	if placement > ZKIsolated {
+		return nil, ErrClass
+	}
+	v, err := NewClassVerifier(classKey, expectedDigest)
+	if err != nil {
+		return nil, err
+	}
+	if v.class.Config.Placement != placement {
+		return nil, fmt.Errorf("%w: ZK placement mismatch", ErrClass)
+	}
+	return v, nil
 }

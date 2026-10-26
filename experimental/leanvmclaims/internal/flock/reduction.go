@@ -1,5 +1,5 @@
 // CREDIT: https://github.com/succinctlabs/flock, MIT OR Apache-2.0.
-// Port of flock reduction, zerocheck and lincheck at fc3fc9ec0ec218d6b5196ecae85a975590729ae6.
+// Port of flock reduction, zerocheck and lincheck at 3e7da4e783dad4c39115e5a231849e52cae5b22f.
 package flock
 
 import (

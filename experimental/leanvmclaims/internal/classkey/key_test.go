@@ -64,6 +64,8 @@ func TestClassContainerGuards(t *testing.T) {
 }
 func FuzzSemanticClass(f *testing.F) {
 	f.Add(compactKey(f))
+	_, shared := fixture.Load(f, "../../testdata/shared", Pin, 12)
+	f.Add(shared["class-key.bin"])
 	f.Add([]byte{})
 	f.Fuzz(func(t *testing.T, b []byte) { _, _ = Load(b, Digest(b)) })
 }

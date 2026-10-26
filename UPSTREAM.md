@@ -202,12 +202,13 @@ Scalar reference permutation and bit-serial field arithmetic are tested separate
 ## Experimental leanVM claim trees (custom fork protocol)
 
 `experimental/leanvmclaims` supports sm-stack/leanVM package 0.1.0 at
-`fc3fc9ec0ec218d6b5196ecae85a975590729ae6`, branch `op-stack/claim-set-leaves`.
-It authenticates compact LVMXCK04 keys, LVMT v22 roots and framed seal/v3 seals.
+`3e7da4e783dad4c39115e5a231849e52cae5b22f`, branch `op-stack/claim-set-leaves`.
+It authenticates compact LVMXCK04 keys with shared or isolated ZK placement,
+LVMT v22 roots and framed seal/v3 seals.
 The standalone leanVM and SP1 pins above are unchanged.
 
 `tools/leanvm-mixed/` pins Rust sources in Cargo.toml and Cargo.lock. Its
-`regenerate.py --check` imports the eight upstream conformance cases and replays
+`regenerate.py --check` imports the eight isolated and five shared upstream conformance cases and replays
 Rust root, class-key and primitive vectors. Private machine metadata is exported
 from an isolated checkout. Fixtures carry raw SHA-256 hashes and exact origin
 pins; artifact inventory is checked by `tools/check_artifacts.py`.
@@ -218,3 +219,7 @@ No Optimism source snapshot is needed to reconstruct it: the complete key and
 proof fixtures are published in the pinned leanVM conformance directory.
 See [PORTING.md](experimental/leanvmclaims/PORTING.md) for protocol details,
 Go/Rust source correspondence, regeneration commands and remaining coverage gaps.
+
+The single-tier shared class uses a 936-byte key with digest
+`7da486eb212493df9593d444446659925963892196008510f7a12159d67b9a18`.
+Its tree rate is 1/8; seals remain at 1/4. Original isolated fixture bytes are retained.

@@ -13,7 +13,7 @@ pub fn descriptor(
     assert_eq!(&bytes[..8], b"LVMXCK04");
     let mut words = bytes[8..].as_chunks::<8>().0.iter();
     let mut next = || u64::from_le_bytes(*words.next().unwrap()) as usize;
-    assert_eq!(next(), 1);
+    assert!(next() <= 1);
     let n = next();
     let classes: Vec<_> = (0..n)
         .map(|_| {

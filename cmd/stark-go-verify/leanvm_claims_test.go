@@ -102,3 +102,24 @@ func TestClaimsRegularFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestSharedClaimsCLI(t *testing.T) {
+	_, files := testutil.Load(t, "../../experimental/leanvmclaims/testdata/shared", leanvmclaims.UpstreamCommit, 12)
+	dir := t.TempDir()
+	for _, name := range []string{"class-key.bin", "root.bin", "claims.bin", "seal.bin"} {
+		if e := os.WriteFile(filepath.Join(dir, name), files[name], 0600); e != nil {
+			t.Fatal(e)
+		}
+	}
+	args := []string{"leanvm-claims", "-class-key", filepath.Join(dir, "class-key.bin"), "-digest", hex.EncodeToString(files["class-key.digest"]), "-root", filepath.Join(dir, "root.bin"), "-claims", filepath.Join(dir, "claims.bin"), "-seal", filepath.Join(dir, "seal.bin")}
+	var out, diag bytes.Buffer
+	if code := run(args, &out, &diag); code != 0 {
+		t.Fatalf("exit %d: %s", code, &diag)
+	}
+	if e := os.WriteFile(filepath.Join(dir, "class-key.bin"), files["isolated-key.bin"], 0600); e != nil {
+		t.Fatal(e)
+	}
+	if code := run(args, &out, &diag); code != 2 {
+		t.Fatalf("wrong placement key: exit %d", code)
+	}
+}

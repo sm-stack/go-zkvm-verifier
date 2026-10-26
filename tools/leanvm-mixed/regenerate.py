@@ -21,28 +21,31 @@ with tempfile.TemporaryDirectory(prefix='compact-vectors-') as temp:
  if source is None:
   source=work/'source';checkout(source)
  # git archive resolves the requested commit even when the supplied checkout is on another branch.
- archive=run(['git','-C',str(source),'archive',PIN,'conformance/mixed-class-key-v4'],capture_output=True).stdout
+ archive=run(['git','-C',str(source),'archive',PIN,'conformance/mixed-class-key-v4','conformance/mixed-class-key-v4-shared-zk'],capture_output=True).stdout
  import io,tarfile,hashlib
  with tarfile.open(fileobj=io.BytesIO(archive)) as t:t.extractall(work,filter='data')
  raw=work/'conformance/mixed-class-key-v4'
- m={'upstream_commit':PIN,'files':{}}
- for f in sorted(raw.rglob('*')):
-  if not f.is_file():continue
-  name=str(f.relative_to(raw));b=f.read_bytes();m['files'][name]={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
-  dest=target/'compact'/(name+'.gz')
+ shared=work/'conformance/mixed-class-key-v4-shared-zk'
+ for source_dir,directory in [(raw,'compact'),(shared,'shared')]:
+  m={'upstream_commit':PIN,'files':{}}
+  for f in sorted(source_dir.rglob('*')):
+   if not f.is_file():continue
+   name=str(f.relative_to(source_dir));b=f.read_bytes();m['files'][name]={'bytes':len(b),'sha256':hashlib.sha256(b).hexdigest()}
+   dest=target/directory/(name+'.gz')
+   if a.check:
+    if gzip.decompress(dest.read_bytes())!=b:raise SystemExit(f'upstream fixture differs: {name}')
+   else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(gzip.compress(b,mtime=0))
+  path=target/directory/'provenance.json'
   if a.check:
-   if gzip.decompress(dest.read_bytes())!=b:raise SystemExit(f'upstream fixture differs: {name}')
-  else:dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(gzip.compress(b,mtime=0))
- path=target/'compact/provenance.json'
- if a.check:
-  if json.loads(path.read_text())!=m:raise SystemExit('fixture manifest differs')
- else:path.write_text(json.dumps(m,indent=2)+'\n')
+   if json.loads(path.read_text())!=m:raise SystemExit('fixture manifest differs')
+  else:path.write_text(json.dumps(m,indent=2)+'\n')
  outputs=[]
  for name in ['transcript','wire','field','merkle','whir','stack','flock','statements']:
   cargo(name,work/(name+'.json'));outputs.append(name+'.json')
  for binary,name in [('root_components','compact-components.json'),('class_mutations','compact-class-mutations.json')]:
   cargo(binary,target/'compact',work/name);outputs.append(name)
  cargo('leanvm-mixed-reference',raw,work/'compact-mutations.json');outputs.append('compact-mutations.json')
+ cargo('shared',shared,work/'shared-mutations.json');outputs.append('shared-mutations.json')
  for name in outputs:
   b=(work/name).read_bytes();dest=target/name
   if a.check:

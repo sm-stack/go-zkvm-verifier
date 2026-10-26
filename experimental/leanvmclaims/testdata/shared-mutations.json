@@ -1,0 +1,61 @@
+{
+  "fixtures": [
+    {
+      "accept": true,
+      "name": "mixed"
+    },
+    {
+      "accept": false,
+      "name": "isolated-key"
+    },
+    {
+      "accept": false,
+      "name": "tier-bit-flipped"
+    },
+    {
+      "accept": false,
+      "name": "opening-dropped"
+    },
+    {
+      "accept": false,
+      "name": "wrong-digest"
+    }
+  ],
+  "loaders": [
+    {
+      "accept": true,
+      "key": "class-key.bin",
+      "placement": "shared"
+    },
+    {
+      "accept": false,
+      "key": "isolated-key.bin",
+      "placement": "shared"
+    },
+    {
+      "accept": false,
+      "key": "class-key.bin",
+      "placement": "isolated"
+    },
+    {
+      "accept": true,
+      "key": "isolated-key.bin",
+      "placement": "isolated"
+    }
+  ],
+  "mutations": [
+    {
+      "accept": false,
+      "action": "usage-missing"
+    },
+    {
+      "accept": false,
+      "action": "usage-extra"
+    },
+    {
+      "accept": false,
+      "action": "second-opening"
+    }
+  ],
+  "upstream_commit": "3e7da4e783dad4c39115e5a231849e52cae5b22f"
+}

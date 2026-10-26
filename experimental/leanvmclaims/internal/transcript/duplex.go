@@ -1,5 +1,5 @@
 // Derived from leanVM crates/fiat_shamir/src/duplex.rs at
-// fc3fc9ec0ec218d6b5196ecae85a975590729ae6 (MIT; see NOTICE).
+// 3e7da4e783dad4c39115e5a231849e52cae5b22f (MIT; see NOTICE).
 package transcript
 
 import (

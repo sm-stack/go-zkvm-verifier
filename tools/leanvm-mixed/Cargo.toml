@@ -6,13 +6,13 @@ edition = "2024"
 license = "MIT"
 
 [dependencies]
-flock = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6", features = ["test-util"] }
-pcs = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" }
-primitives = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" }
-fiat_shamir = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" }
-leanvm = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" }
-parallel = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" }
-leanvm_guest = { git = "https://github.com/sm-stack/leanVM", rev = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" }
+flock = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f", features = ["test-util"] }
+pcs = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f" }
+primitives = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f" }
+fiat_shamir = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f" }
+leanvm = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f" }
+parallel = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f" }
+leanvm_guest = { git = "https://github.com/sm-stack/leanVM", rev = "3e7da4e783dad4c39115e5a231849e52cae5b22f" }
 serde_json = "1"
 flate2 = "1"
 

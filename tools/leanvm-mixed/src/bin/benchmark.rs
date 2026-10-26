@@ -1,7 +1,7 @@
 //! Sequential loaded-key verification of the same raw files as tools/benchmark-claims.
 use leanvm::{
     ProofTranscript,
-    aggregate::{ClaimSet, Tree, TreeProof},
+    aggregate::{ClaimSet, Tree, TreeProof, ZkPlacement},
 };
 use leanvm_mixed_reference::{PIN, descriptor};
 use std::{path::Path, time::Instant};
@@ -14,7 +14,12 @@ fn main() {
     let pin = Tree::mixed_class_key_digest(&key);
     let (classes, shape) = descriptor(&key);
     let start = Instant::now();
-    let tree = Tree::mixed_classes_from_bytes(&classes, shape, &key, &pin).unwrap();
+    let placement = if u64::from_le_bytes(key[8..16].try_into().unwrap()) == 0 {
+        ZkPlacement::Shared
+    } else {
+        ZkPlacement::Isolated
+    };
+    let tree = Tree::mixed_classes_from_bytes_with(&classes, shape, placement, &key, &pin).unwrap();
     let load = start.elapsed();
     let root = TreeProof::from_bytes(&read("root.bin")).unwrap();
     let claims = ClaimSet::from_bytes(&read("claims.bin")).unwrap();

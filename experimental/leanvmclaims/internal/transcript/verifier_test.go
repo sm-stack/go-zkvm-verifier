@@ -25,7 +25,7 @@ func loadVectors(t *testing.T) vectors {
 	t.Helper()
 	var v vectors
 	fixture.JSON(t, "../../testdata/transcript.json", &v)
-	if v.Pin != "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" {
+	if v.Pin != "3e7da4e783dad4c39115e5a231849e52cae5b22f" {
 		t.Fatal("stale upstream pin")
 	}
 	return v
