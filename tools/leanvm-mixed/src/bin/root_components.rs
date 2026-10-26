@@ -26,25 +26,7 @@ fn main() {
     let (classes, shape) = leanvm_mixed_reference::descriptor(&key);
     let tree = Tree::mixed_classes_from_bytes(&classes, shape, &key, &pin).unwrap();
     let mut cases = vec![];
-    let all_names = [
-        "first",
-        "first-class1",
-        "one-member",
-        "small-node",
-        "wide",
-        "fold-dedup",
-    ];
-    let names = if base.join("production/root.bin.gz").exists() || base.ends_with("production") {
-        &["production"][..]
-    } else if shape.claims.unwrap().small.is_none() {
-        &all_names[..4]
-    } else {
-        &all_names[..]
-    };
-    let mut names = names.to_vec();
-    if base.join("raw-zk-first/root.bin.gz").exists() {
-        names.push("raw-zk-first");
-    }
+    let names = ["plain-small", "plain-large", "mixed-zk", "one-zk"];
     for (i, name) in names.iter().enumerate() {
         let bytes = read(base, &format!("{name}/root.bin"));
         let root = TreeProof::from_bytes(&bytes).unwrap();

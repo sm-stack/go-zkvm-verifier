@@ -68,23 +68,42 @@ func tables(r *reader, b busResult, layout *machine.Layout, s *machine.Schema) (
 	return points, r.Err
 }
 
-// Verify authenticates the recursion proof and its HASH matrix claim. Carried
-// tree matrix claims, claims digest, and seal are separate caller obligations.
-func Verify(k *classkey.Validated, root wire.Root) error {
-	schema, err := machine.Load()
-	if err != nil {
-		return err
-	}
-	return verifyWithSchema(k, root, schema)
+// fixedEvaluations collects the exact columns consumed by the root arithmetic.
+// Verification is incomplete until the caller authenticates all returned claims.
+type fixedEvaluations struct {
+	values [102]E
+	claims [102]pcs.PointClaim
+	seen   [102]bool
+	block  uint64
 }
 
-func verifyWithSchema(k *classkey.Validated, root wire.Root, schema *machine.Schema) error {
+// Verify authenticates the native recursion proof using supplied fixed values.
+// The caller must authenticate every returned claim in the seal transcript.
+func Verify(k *classkey.Validated, root wire.Root, values [102]E) ([]pcs.PointClaim, error) {
+	schema, err := machine.Load()
+	if err != nil {
+		return nil, err
+	}
+	columns := fixedEvaluations{values: values}
+	if err = verifyWithSchema(k, root, schema, &columns); err != nil {
+		return nil, err
+	}
+	for _, seen := range columns.seen {
+		if !seen {
+			return nil, ErrProof
+		}
+	}
+	return columns.claims[:], nil
+}
+func verifyWithSchema(k *classkey.Validated, root wire.Root, schema *machine.Schema, columns *fixedEvaluations) error {
 	position, err := settlement.Position(k, root)
 	if err != nil {
 		return err
 	}
 	tier := k.Places[position].Tier
 	layout := k.Layouts[tier]
+	local := (root.Circuit >> 1) & ((uint64(1) << uint(k.TierShift)) - 1)
+	columns.block = local << uint(layout.FixedVars)
 	v, err := transcript.NewVerifier(k.RootSession, root.Instance(), root.Proof)
 	if err != nil {
 		return err
@@ -100,7 +119,7 @@ func verifyWithSchema(k *classkey.Validated, root wire.Root, schema *machine.Sch
 		return err
 	}
 	r := reader{FieldReader: transcript.FieldReader{Verifier: v}}
-	balance, err := bus(&r, k, root, position, layout, schema)
+	balance, err := bus(&r, root, layout, schema, columns)
 	if err != nil {
 		return err
 	}

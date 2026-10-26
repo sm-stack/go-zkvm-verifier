@@ -81,5 +81,5 @@ func Load(t testing.TB, base, pin string, count int) (Manifest, map[string][]byt
 	return m, files
 }
 
-// ClaimsV2Pin is the generating revision of the unchanged v2 regression corpus.
-const ClaimsV2Pin = "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5"
+// ClaimsPin is the generating revision of the claim-tree regression corpus.
+const ClaimsPin = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6"

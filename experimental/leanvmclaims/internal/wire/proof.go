@@ -1,4 +1,4 @@
-// Derived from rec/tree/{proof,multiset}.rs at 59c25cccfd5742f8216f259f9dd4d80d9a5f66e5.
+// Derived from rec/tree/{proof,multiset}.rs at fc3fc9ec0ec218d6b5196ecae85a975590729ae6.
 // Upstream MIT attribution is retained in NOTICE.
 package wire
 
@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/blake"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/transcript"
+	"golang.org/x/crypto/blake2s"
 	"slices"
 )
 
@@ -19,6 +20,7 @@ type Root struct {
 	Circuit uint64
 	Words   []Element
 	Proof   transcript.Proof
+	Hash    [32]byte
 }
 
 func DecodeRoot(data []byte) (Root, error) { return DecodeRootBounded(data, -1) }
@@ -28,9 +30,10 @@ func DecodeRootBounded(data []byte, statementWords int) (Root, error) {
 	if len(data) < 11 || string(data[:4]) != "LVMT" {
 		return Root{}, ErrEncoding
 	}
-	if version := binary.LittleEndian.Uint16(data[4:6]); version != 21 {
-		return Root{}, fmt.Errorf("leanvmclaims: root version %d, expected 21", version)
+	if version := binary.LittleEndian.Uint16(data[4:6]); version != 22 {
+		return Root{}, fmt.Errorf("leanvmclaims: root version %d, expected 22", version)
 	}
+	hash := blake2s.Sum256(data)
 	rate := data[6]
 	if rate < 1 || rate > 4 {
 		return Root{}, ErrEncoding
@@ -55,7 +58,7 @@ func DecodeRootBounded(data []byte, statementWords int) (Root, error) {
 			words[i][j] = binary.LittleEndian.Uint64(data[i*24+j*8:])
 		}
 	}
-	return Root{rate, circuit, words, p}, nil
+	return Root{rate, circuit, words, p, hash}, nil
 }
 
 // Instance is LengthPrefixed(root.limbs().as_flattened()): four u64 limbs
@@ -69,6 +72,13 @@ func (r Root) Instance() []byte {
 		}
 	}
 	return out
+}
+
+// SealInstance binds the statement and the entire serialized root proof.
+func (r Root) SealInstance() []byte {
+	out := r.Instance()
+	binary.LittleEndian.PutUint64(out, uint64(len(r.Words))*4+4)
+	return append(out, r.Hash[:]...)
 }
 
 type Group struct {

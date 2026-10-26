@@ -58,7 +58,7 @@ MIXED_CASES = [
  ('recursion/verify.go', 'if err = v.EOF(); err != nil {', 'if false {', 'recursion', 'TestRootEOFBinding'),
  ('recursion/verify.go', 'return replay[0].Matrix.Check(hash, make([]E, len(hash.Gates)))', 'return nil', 'recursion', 'TestHashMatrixBinding'),
  ('recursion/verify.go', 'layout := k.Layouts[tier]', 'layout := k.Layouts[tier%1]', 'recursion', 'TestTierLayoutSelection'),
- ('recursion/verify.go', 'tier := k.Places[position].Tier', 'tier := 1', 'recursion', 'TestTierLayoutSelection'),
+ ('recursion/verify.go', 'tier := k.Places[position].Tier', 'tier := 1 + 0*position', 'recursion', 'TestTierLayoutSelection'),
 ]
 # Every entry uses (source, replacement site, replacement, package, regression).
 mutations = [('sp1/'+file, 'if '+condition+' {', 'if false && ('+condition+') {', './sp1', test)
@@ -72,11 +72,13 @@ mutations += [
 mutations += [(CLAIMS+file, old, new, './'+CLAIMS+package, test)
               for file, old, new, package, test in MIXED_CASES]
 mutations += [
- ('experimental/leanvmclaims/internal/settlement/settlement.go', 'if !k.Places[position].First {', 'if position >= len(k.Config.Leaves) {', './experimental/leanvmclaims', 'TestZKRoots'),
- ('experimental/leanvmclaims/internal/classkey/semantic.go', 'tag = append(tag, byte(leaf.Kind))', 'tag = append(tag, byte(leaf.Kind)*0)', './experimental/leanvmclaims', 'TestZKRoots'),
- ('experimental/leanvmclaims/internal/classkey/key.go', 'if r.word() != 1 {', 'if r.word() > 1 {', './experimental/leanvmclaims', 'TestZKContainer'),
- ('experimental/leanvmclaims/internal/recursion/verify.go', 'tier := k.Places[position].Tier', 'tier := min(k.Places[position].Tier, 1)', './experimental/leanvmclaims', 'TestZKRoots'),
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', 'tag = append(tag, byte(leaf.Kind))', 'tag = append(tag, byte(leaf.Kind)*0)', './experimental/leanvmclaims', 'TestRustSealedVerdicts'),
+ ('experimental/leanvmclaims/internal/recursion/verify.go', 'tier := k.Places[position].Tier', 'tier := min(k.Places[position].Tier, 1)', './experimental/leanvmclaims/internal/recursion', 'TestDedicatedTierDispatch'),
  ('experimental/leanvmclaims/internal/settlement/settlement.go', ' || uint64(root.Rate) != k.Config.TreeRate', '', './experimental/leanvmclaims', 'TestRootRateBinding'),
+ ('experimental/leanvmclaims/internal/settlement/settlement.go', 'if len(own) != 102 {', 'if false {', './experimental/leanvmclaims', 'TestSealBindings'),
+ ('experimental/leanvmclaims/internal/settlement/settlement.go', 'if binary.LittleEndian.Uint64(count) != 102 {', 'if false && binary.LittleEndian.Uint64(count) != 102 {', './experimental/leanvmclaims', 'TestSealPrefixCount'),
+ ('experimental/leanvmclaims/internal/settlement/settlement.go', 'used != (wire.Element{}) || values[2+tier] != (E{})', 'false', './experimental/leanvmclaims', 'TestUnusedTierContract'),
+ ('experimental/leanvmclaims/internal/settlement/settlement.go', 'return v.EOF()', 'return nil', './experimental/leanvmclaims', 'TestSealBindings'),
 ]
 mutations += [
  ('experimental/leanvmclaims/internal/classkey/key.go', ' || config.check() != nil', '', './experimental/leanvmclaims', 'TestClassContainerGuards'),
@@ -87,8 +89,7 @@ mutations += [
  ('experimental/leanvmclaims/internal/classkey/key.go', 'c.Heights != k.Heights[tier]', '(false && c.Heights != k.Heights[tier])', './experimental/leanvmclaims', 'TestClassContainerGuards'),
 ]
 mutations += [
- ('experimental/leanvmclaims/internal/classkey/semantic.go', 'tag = append(tag, byte(leaf.LeafRate))', 'tag = append(tag, byte(first.LeafRate))', './experimental/leanvmclaims', 'TestRustOneTierVerdicts'),
- ('experimental/leanvmclaims/internal/classkey/key.go', ' || n > uint64(len(data)-r.pos)/880', '', './experimental/leanvmclaims', 'TestRejectBeforeLargeAllocation'),
+ ('experimental/leanvmclaims/internal/classkey/key.go', ' || n > uint64(len(data)-r.pos)/56', '', './experimental/leanvmclaims', 'TestRejectBeforeLargeAllocation'),
  ('experimental/leanvmclaims/internal/wire/proof.go', ' || (statementWords >= 0 && n != uint64(statementWords))', '', './experimental/leanvmclaims', 'TestRejectBeforeLargeAllocation'),
  ('experimental/leanvmclaims/claims.go', 'if err := claims.Check(math.MaxUint64, math.MaxUint32); err != nil {', 'if err := claims.Check(math.MaxUint64, math.MaxUint32); false && err != nil {', './experimental/leanvmclaims', 'TestEncodeClaimsCanonical'),
  ('experimental/leanvmclaims/verifier.go', 'if v == nil || v.class == nil {\n\t\treturn ErrClass', 'if false {\n\t\treturn ErrClass', './experimental/leanvmclaims', 'TestNilVerifier'),

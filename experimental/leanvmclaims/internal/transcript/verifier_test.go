@@ -25,14 +25,14 @@ func loadVectors(t *testing.T) vectors {
 	t.Helper()
 	var v vectors
 	fixture.JSON(t, "../../testdata/transcript.json", &v)
-	if v.Pin != "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5" {
+	if v.Pin != "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" {
 		t.Fatal("stale upstream pin")
 	}
 	return v
 }
 func TestRustTranscript(t *testing.T) {
 	v := loadVectors(t)
-	session := Session([]byte("leanvm/mixed-tree-seal/v2"), fixture.Hex(t, v.Relation))
+	session := Session([]byte("leanvm/mixed-tree-seal/v3"), fixture.Hex(t, v.Relation))
 	if hex.EncodeToString(session[:]) != v.Session {
 		t.Fatal("Rust session mismatch")
 	}

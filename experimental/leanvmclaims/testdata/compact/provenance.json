@@ -1,0 +1,85 @@
+{
+  "upstream_commit": "fc3fc9ec0ec218d6b5196ecae85a975590729ae6",
+  "files": {
+    "README.md": {
+      "bytes": 1132,
+      "sha256": "32e5216b4d16f9579cab8457be4abc47a96115a9339eccc764e0451484e9c36d"
+    },
+    "class-key.bin": {
+      "bytes": 1288,
+      "sha256": "6618759a05e6edbdd4d36957ba7a72b5577af77d6b1345de7f45e9ef697978d7"
+    },
+    "class-key.digest": {
+      "bytes": 32,
+      "sha256": "870af988aea7b653ed84b3c35d872499c11a4bf0ef3c6ec9048b5954ad726815"
+    },
+    "mixed-zk/claims.bin": {
+      "bytes": 4716,
+      "sha256": "2ea2720e798987c2b581d279bab70da795cd8903a36c887f45b2f83479631ebf"
+    },
+    "mixed-zk/root.bin": {
+      "bytes": 256771,
+      "sha256": "b920f41d92d22a0dfb8b140c4b5f88608dbff3469562b92e0cfd3e963a5bfe39"
+    },
+    "mixed-zk/seal.bin": {
+      "bytes": 351908,
+      "sha256": "85c16b269597368e94273c4ccb22f93ec12910aae0c6f6240db7eda9e3bddcae"
+    },
+    "one-zk/claims.bin": {
+      "bytes": 568,
+      "sha256": "a06a154c9174e4a7d0093e866867494ceb170bc002582835b585f9afcea74b3e"
+    },
+    "one-zk/root.bin": {
+      "bytes": 256291,
+      "sha256": "7af5f27e40198e183761245c586b94d11c22ee6b73a582c435c37a855fa2abe1"
+    },
+    "one-zk/seal.bin": {
+      "bytes": 353572,
+      "sha256": "4168938f872f06a09f03fa6b3484d0668105ed3e7f660929c4df8cddc041bd3e"
+    },
+    "opening-added.bin": {
+      "bytes": 385528,
+      "sha256": "bce3deb3370a1872f4fb1d48386537453ac494ee97c836d210cd7e46b6a17032"
+    },
+    "opening-dropped.bin": {
+      "bytes": 2464,
+      "sha256": "ec59b12352c7d4ca4cf0e7595b6ca8d4c745e2cc9343d776b65dc5589a1bbdad"
+    },
+    "plain-large/claims.bin": {
+      "bytes": 12448,
+      "sha256": "760957c928762e8bfa4e6ef5f66307be5e72515d769d9031aadef6142aee76c6"
+    },
+    "plain-large/root.bin": {
+      "bytes": 300311,
+      "sha256": "3a4464ec5f1e546a8cfc726b0a5f558a7660c130801dfaa9405a7550f15847d0"
+    },
+    "plain-large/seal.bin": {
+      "bytes": 367556,
+      "sha256": "66f1ed4d804041c50d627fc52de738e39f2dfa05b100a2d81eba3c30b2656e66"
+    },
+    "plain-small/claims.bin": {
+      "bytes": 8300,
+      "sha256": "6c658808584a41a06272f120fbde3c7de6746db24f2a265a47f340b19e5ee453"
+    },
+    "plain-small/root.bin": {
+      "bytes": 257059,
+      "sha256": "7135fe27d5d6f904813443ed7c1b692e14ff1f6b04ec4fd311e08446af00d1e9"
+    },
+    "plain-small/seal.bin": {
+      "bytes": 193996,
+      "sha256": "5a7d1498e60146af6389273d6d9bd5298d02b1473bd271707d14e01ef5df5ccc"
+    },
+    "tier-bit-flipped.bin": {
+      "bytes": 257059,
+      "sha256": "88cc672acc38858410050aba71c58a585391297b91dc179a73b9b23603f0a3a9"
+    },
+    "verdicts.tsv": {
+      "bytes": 934,
+      "sha256": "97998bdb9112b19ca84c83feb76f872a1ac52a768bee77c03bc5867295bdb9d2"
+    },
+    "wrong.digest": {
+      "bytes": 32,
+      "sha256": "4c8debf5f1ad57ab4d97624289905681390039199219bfaf11d0737da58292ba"
+    }
+  }
+}

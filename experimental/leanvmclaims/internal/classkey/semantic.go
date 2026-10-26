@@ -121,7 +121,7 @@ func Load(data []byte, pin [32]byte) (*Validated, error) {
 	for _, n := range v.DenseVars {
 		v.DensePointVars = max(v.DensePointVars, n)
 	}
-	v.StatementWords = 3 + v.DensePointVars + v.Polynomials + 2*s.MaxKLog + 2*len(s.Circuits)
+	v.StatementWords = 3 + v.DensePointVars + v.Polynomials + len(v.Layouts) + 2*s.MaxKLog + 2*len(s.Circuits)
 	v.Codes = make([]uint64, count)
 	for i, c := range k.Circuits {
 		if c.StatementWords != uint64(v.StatementWords) {
@@ -135,7 +135,7 @@ func Load(data []byte, pin [32]byte) (*Validated, error) {
 		}
 	}
 	v.ProgramDigest = placeholderDigest(k.Placeholders[0], first)
-	tag := append([]byte("leanvm-tree-18"), v.ProgramDigest[:]...)
+	tag := append([]byte("leanvm-tree-19"), v.ProgramDigest[:]...)
 	tag = append(tag, []byte("/mixed-members/2")...)
 	if config.zkCount() > 0 {
 		tag = append(tag, []byte("/zk-leaves/1")...)
@@ -162,7 +162,7 @@ func Load(data []byte, pin [32]byte) (*Validated, error) {
 	}
 	tag = append(tag, byte(first.LeafRate), byte(config.TreeRate))
 	v.RootSession = transcript.Session(tag, nil)
-	v.SealSession = transcript.Session([]byte("leanvm/mixed-tree-seal/v2"), pin[:])
+	v.SealSession = transcript.Session([]byte("leanvm/mixed-tree-seal/v3"), pin[:])
 	return v, nil
 }
 

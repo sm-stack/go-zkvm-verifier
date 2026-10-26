@@ -5,7 +5,7 @@ use serde_json::json;
 fn main() {
     let out = std::env::args().nth(1).expect("output file");
     let relation = std::array::from_fn::<_, 32, _>(|i| i as u8);
-    let session = SessionId::tagged(b"leanvm/mixed-tree-seal/v2", &relation);
+    let session = SessionId::tagged(b"leanvm/mixed-tree-seal/v3", &relation);
     let mut p = ProverState::new(&session, &7u64);
     p.public_message(&[1u8; 24]);
     p.prover_message(&[5u8; 32]);

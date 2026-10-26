@@ -42,7 +42,7 @@ func TestRustStack(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "../../testdata/stack.json", &vectors)
-	if vectors.Pin != "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5" {
+	if vectors.Pin != "fc3fc9ec0ec218d6b5196ecae85a975590729ae6" {
 		t.Fatal("stale pin")
 	}
 	var session [32]byte

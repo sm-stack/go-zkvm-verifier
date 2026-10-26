@@ -62,7 +62,7 @@ func Matrices(k *classkey.Validated, root wire.Root) error {
 	if err != nil {
 		return err
 	}
-	start := 3 + k.DensePointVars + k.Polynomials
+	start := 3 + k.DensePointVars + k.Polynomials + len(k.Layouts)
 	rows := elements(root.Words[start : start+s.MaxKLog])
 	start += s.MaxKLog
 	cols := elements(root.Words[start : start+s.MaxKLog])
@@ -87,34 +87,67 @@ func Matrices(k *classkey.Validated, root wire.Root) error {
 	return nil
 }
 
-// Seal checks the fixed-polynomial openings bound to the class key and root
-// statement. A successful seal does not authenticate the recursion proof.
-func Seal(k *classkey.Validated, root wire.Root, proof transcript.Proof) error {
+// BeginSeal binds all supplied column values before any PCS challenges.
+func BeginSeal(k *classkey.Validated, root wire.Root, proof transcript.Proof) (*transcript.Verifier, [102]E, error) {
+	var values [102]E
+	if _, err := Position(k, root); err != nil {
+		return nil, values, err
+	}
+	v, err := transcript.NewVerifier(k.SealSession, root.SealInstance(), proof)
+	if err != nil {
+		return nil, values, err
+	}
+	count, err := v.Read(8)
+	if err != nil {
+		return nil, values, err
+	}
+	if binary.LittleEndian.Uint64(count) != 102 {
+		return nil, values, ErrStatement
+	}
+	r := transcript.FieldReader{Verifier: v}
+	for i := range values {
+		values[i] = r.ReadElement()
+	}
+	return v, values, r.Err
+}
+
+// Seal authenticates the root's consumed columns and selectively opens carried
+// fixed claims. The caller must first verify the root and carried matrix claims.
+func Seal(k *classkey.Validated, root wire.Root, v *transcript.Verifier, own []pcs.PointClaim) error {
 	position, err := Position(k, root)
 	if err != nil {
 		return err
 	}
-	v, err := transcript.NewVerifier(k.SealSession, root.Instance(), proof)
-	if err != nil {
-		return err
+	if len(own) != 102 {
+		return ErrStatement
 	}
-	if !k.Places[position].First {
-		dense := elements(root.Words[3 : 3+k.DensePointVars])
-		values := elements(root.Words[3+k.DensePointVars : 3+k.DensePointVars+k.Polynomials])
-		for poly := 2; poly < k.Polynomials; poly++ {
-			vars := k.DenseVars[poly]
-			logN := max(15, vars)
-			// The supported PCS profiles impose this bound in Rust's stack_shape too.
-			if logN > 28 {
-				return ErrStatement
-			}
-			length := uint64(1) << uint(vars)
-			lane := uint64(1) << uint(logN-6)
-			lanes := int((length + lane - 1) / lane)
-			claim := pcs.PointClaim{Point: dense[:vars], Value: values[poly]}
-			if err = pcs.VerifyStack(v, k.Key.Roots[poly-2], logN, 2, lanes, []pcs.PointClaim{claim}, nil); err != nil {
-				return err
-			}
+	dense := elements(root.Words[3 : 3+k.DensePointVars])
+	values := elements(root.Words[3+k.DensePointVars : 3+k.DensePointVars+k.Polynomials])
+	usageAt := 3 + k.DensePointVars + k.Polynomials
+	for tier := range k.Layouts {
+		used := root.Words[usageAt+tier]
+		var claims []pcs.PointClaim
+		if used == (wire.Element{1, 0, 0}) {
+			claims = append(claims, pcs.PointClaim{Point: dense[:k.DenseVars[2+tier]], Value: values[2+tier]})
+		} else if used != (wire.Element{}) || values[2+tier] != (E{}) {
+			return ErrStatement
+		}
+		if tier == k.Places[position].Tier {
+			claims = append(claims, own...)
+		}
+		if len(claims) == 0 {
+			continue
+		}
+		vars := k.DenseVars[2+tier]
+		logN := max(15, vars)
+		if logN > 28 {
+			return ErrStatement
+		}
+		length := uint64(1) << uint(vars)
+		lane := uint64(1) << uint(logN-6)
+		lanes := int((length + lane - 1) / lane)
+		if err = pcs.VerifyStack(v, k.Key.Roots[tier], logN, 2, lanes, claims, nil); err != nil {
+			return err
 		}
 	}
 	return v.EOF()

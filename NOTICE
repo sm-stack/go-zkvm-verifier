@@ -6,8 +6,7 @@ and regeneration instructions. Existing source-level notices are retained.
 
 Optimism — https://github.com/sm-stack/optimism
 Adapted Go verifiers, fixtures and reference tools in leanvm/, sp1/,
-internal/gf2/, tools/leanvm/, tools/sp1/, tools/leanvm-mixed/production/,
-tools/leanvm-zk/production/ and the operational/production claim-tree fixtures.
+internal/gf2/, tools/leanvm/ and tools/sp1/.
 Copyright 2020-2025 Optimism.
 MIT; original license text and copyright notice preserved in LICENSE.
 

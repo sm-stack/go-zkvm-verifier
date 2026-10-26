@@ -5,152 +5,81 @@ import (
 	"encoding/binary"
 	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
-type vector struct {
-	PlaceholderDigest string `json:"placeholder_digest"`
-	Name              string
-	Descriptor        string
-	Digest            string
-	Bytes             int
-	LoaderOnly        bool `json:"loader_only_zero_columns"`
-	SemanticCases     []struct {
-		Index  int
-		Value  uint64
-		Accept bool
-		Digest string
-	} `json:"semantic_cases"`
-	Mutations []struct {
-		Name   string
-		Offset int
-		Value  byte
-		Accept bool
-		Digest string
-	}
-}
-
-func vectors(t testing.TB) []vector {
+func compactKey(t testing.TB) []byte {
 	t.Helper()
-	var v struct {
-		Pin     string `json:"upstream_commit"`
-		Classes []vector
-	}
-	fixture.JSON(t, "../../testdata/classes.json", &v)
-	if v.Pin != fixture.ClaimsV2Pin || len(v.Classes) != 2 {
-		t.Fatal("stale or missing Rust vectors")
-	}
-	manifest, e := os.ReadFile("../../../../tools/leanvm-mixed/Cargo.toml")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if !strings.Contains(string(manifest), `rev = "`+fixture.ClaimsV2Pin+`"`) {
-		t.Fatal("Rust dependency pin differs")
-	}
-	lock, e := os.ReadFile("../../../../tools/leanvm-mixed/Cargo.lock")
-	if e != nil {
-		t.Fatal(e)
-	}
-	if !strings.Contains(string(lock), "#"+fixture.ClaimsV2Pin) {
-		t.Fatal("Rust lock pin differs")
-	}
-	return v.Classes
-}
-func input(t testing.TB, v vector) []byte {
-	t.Helper()
-	return fixture.Gzip(t, filepath.Join("../../testdata", v.Name+".key.gz"), v.Bytes)
+	_, f := fixture.Load(t, "../../testdata/compact", Pin, 20)
+	return f["class-key.bin"]
 }
 func TestRustClassKeyVectors(t *testing.T) {
-	for _, v := range vectors(t) {
-		t.Run(v.Name, func(t *testing.T) {
-			if !v.LoaderOnly {
-				t.Fatal("expected explicitly labelled loader-only fixture")
-			}
-			b := input(t, v)
-			pin := [32]byte(fixture.Hex(t, v.Digest))
-			if Digest(b) != pin {
-				t.Fatal("Rust/Go digest differs")
-			}
-			k, e := Decode(b, pin)
-			if e != nil {
-				t.Fatal(e)
-			}
-			if len(k.Roots) != len(k.Heights) || len(k.Circuits) < 2 {
-				t.Fatal("wrong layout")
-			}
-			for _, m := range v.Mutations {
-				if m.Name == "statement-length" {
-					continue
-				} // Semantic check lives in TestSemanticClasses.
-				edited := bytes.Clone(b)
-				edited[m.Offset] = m.Value
-				d := Digest(edited)
-				if d != [32]byte(fixture.Hex(t, m.Digest)) {
-					t.Fatal("mutated digest", m.Name)
-				}
-				_, e := Decode(edited, d)
-				if (e == nil) != m.Accept {
-					t.Fatalf("Rust/Go wire verdict differs for %s: %v", m.Name, e)
-				}
-			}
-			wrong := pin
-			wrong[0] ^= 1
-			if _, e = Decode(b, wrong); e != ErrDigest {
-				t.Fatal("wrong pin accepted")
-			}
-			for _, n := range []int{0, 7, 8, 183, len(b) - 1} {
-				short := b[:n]
-				if _, e = Decode(short, Digest(short)); e == nil {
-					t.Fatalf("truncation %d accepted", n)
-				}
-			}
-			extra := append(bytes.Clone(b), 0)
-			if _, e = Decode(extra, Digest(extra)); e == nil {
-				t.Fatal("trailing byte accepted")
-			}
-			for _, q := range [][3]int{{-1, 0, 0}, {len(k.Circuits), 0, 0}, {0, -1, 0}, {0, 102, 0}, {0, 0, k.Circuits[0].Columns[0].Words + 1}} {
-				if _, e := k.ColumnBytes(q[0], q[1], q[2]); e == nil {
-					t.Fatal("column bounds", q)
-				}
-			}
-			pos := k.Circuits[0].Columns[0].Offset
-			b[pos] ^= 255
-			if w, e := k.ColumnBytes(0, 0, 1); e != nil || binary.LittleEndian.Uint64(w) != 0 {
-				t.Fatal("caller mutation changed owned key")
-			}
-			if _, e := k.ColumnBytes(0, 0, -1); e == nil {
-				t.Fatal("negative row")
-			}
-		})
+	b := compactKey(t)
+	pin := Digest(b)
+	if pin != [32]byte(fixture.Hex(t, "5345ead055078db8baf0dc0db0c605ccd9f32a26c8c7626b3f28d007a3d9d7ee")) {
+		t.Fatal("digest mismatch")
+	}
+	k, e := Load(b, pin)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if len(k.Layouts) != 3 || len(k.Config.Leaves) != 3 {
+		t.Fatal("class shape")
+	}
+	wrong := pin
+	wrong[0] ^= 1
+	if _, e = Load(b, wrong); e != ErrDigest {
+		t.Fatal(e)
+	}
+	for cut := 0; cut < len(b); cut++ {
+		s := b[:cut]
+		if _, e := Load(s, Digest(s)); e == nil {
+			t.Fatalf("truncation %d accepted", cut)
+		}
+	}
+	extra := append(bytes.Clone(b), 0)
+	if _, e := Load(extra, Digest(extra)); e == nil {
+		t.Fatal("trailing")
+	}
+	for _, version := range []byte{'2', '3'} {
+		s := bytes.Clone(b)
+		s[7] = version
+		if _, e := Load(s, Digest(s)); e == nil {
+			t.Fatal("old magic")
+		}
 	}
 }
-func FuzzClassKeyWire(f *testing.F) {
-	f.Add([]byte("LVMXCK02"))
-	f.Add(make([]byte, 216))
-	for _, v := range vectors(f) {
-		b := input(f, v)
-		f.Add(bytes.Clone(b[:min(len(b), 4096)]))
+func TestClassContainerGuards(t *testing.T) {
+	b := compactKey(t)
+	for _, m := range []struct {
+		at int
+		v  uint64
+	}{{8, 0}, {16, 0}, {16, ^uint64(0)}, {24 + 17*8, 2}, {24 + 3*144 + 5*8, 2}} {
+		s := bytes.Clone(b)
+		binary.LittleEndian.PutUint64(s[m.at:], m.v)
+		if _, e := Load(s, Digest(s)); e == nil {
+			t.Fatalf("accepted %+v", m)
+		}
 	}
-	f.Fuzz(func(t *testing.T, b []byte) {
-		// Rehash so malformed inputs reach parsing instead of stopping at authentication.
-		_, _ = Decode(b, Digest(b))
-	})
 }
-func BenchmarkLoadClassKey(b *testing.B) {
-	for _, v := range vectors(b) {
-		b.Run(v.Name, func(b *testing.B) {
-			data := input(b, v)
-			pin := Digest(data)
-			b.ReportAllocs()
-			b.SetBytes(int64(len(data)))
-			b.ResetTimer()
-			for range b.N {
-				if _, e := Decode(data, pin); e != nil {
-					b.Fatal(e)
-				}
-			}
-		})
+func FuzzSemanticClass(f *testing.F) {
+	f.Add(compactKey(f))
+	f.Add([]byte{})
+	f.Fuzz(func(t *testing.T, b []byte) { _, _ = Load(b, Digest(b)) })
+}
+
+func TestReferencePin(t *testing.T) {
+	for _, file := range []string{"Cargo.toml", "Cargo.lock"} {
+		b, e := os.ReadFile("../../../../tools/leanvm-mixed/" + file)
+		if e != nil {
+			t.Fatal(e)
+		}
+		marker := `rev = "` + Pin + `"`
+		if file == "Cargo.lock" {
+			marker = "#" + Pin
+		}
+		if !bytes.Contains(b, []byte(marker)) {
+			t.Fatal("Rust reference pin differs", file)
+		}
 	}
 }

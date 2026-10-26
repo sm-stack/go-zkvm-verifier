@@ -46,33 +46,36 @@ func TestRejectBeforeLargeAllocation(t *testing.T) {
 	f := loadFixtures(t)
 	const words = 32768
 	root := make([]byte, 11+24*words+8) // full statement and an empty transcript
-	copy(root, []byte{'L', 'V', 'M', 'T', 21, 0, 1})
+	copy(root, []byte{'L', 'V', 'M', 'T', 22, 0, 1})
 	binary.LittleEndian.PutUint32(root[7:], words)
-	claims, err := f.verifier.DecodeClaims(f.files["first/claims.bin"])
+	claims, err := f.verifier.DecodeClaims(f.files["one-zk/claims.bin"])
 	if err != nil {
 		t.Fatal(err)
 	}
-	allocationBound(t, func() error { return f.verifier.VerifySealed(claims, root, f.files["first/seal.bin"]) })
+	allocationBound(t, func() error { return f.verifier.VerifySealed(claims, root, f.files["one-zk/seal.bin"]) })
 	// The count matches the descriptor but no circuit records follow it.
 	// Removing the byte-length guard would allocate thousands of Circuit structs.
-	const shape = 16 + 2*136
-	const circuitCount = shape + (6+3+2)*8 + 4*32 + 8 + 2*48
+	const shape = 24 + 3*144
+	const circuitCount = shape + (6+3+2)*8 + 6*32 + 8 + 3*48
 	key := append([]byte(nil), f.files["class-key.bin"][:circuitCount+8]...)
 	binary.LittleEndian.PutUint64(key[shape+8:], 4096)
 	binary.LittleEndian.PutUint64(key[shape+48:], 4096)
-	binary.LittleEndian.PutUint64(key[circuitCount:], 2+4096+1)
+	binary.LittleEndian.PutUint64(key[circuitCount:], 3+4096-1+2+1)
 	digest := classkey.Digest(key)
 	allocationBound(t, func() error { _, err := NewClassVerifier(key, digest); return err })
 }
 
-func TestVerificationCacheLimits(t *testing.T) {
+func TestScratchCompatibility(t *testing.T) {
+	if SetScratchCacheLimit(-1) == nil {
+		t.Fatal("negative compatibility limit")
+	}
 	f := loadFixtures(t)
 	defer SetScratchCacheLimit(24 << 20)
 	for _, limit := range []int{0, 1024, 24 << 20} {
 		if err := SetScratchCacheLimit(limit); err != nil {
 			t.Fatal(err)
 		}
-		if err := verifyEncoded(f.verifier, f.files["small-node/root.bin"], f.files["small-node/claims.bin"], f.files["small-node/seal.bin"]); err != nil {
+		if err := verifyEncoded(f.verifier, f.files["plain-small/root.bin"], f.files["plain-small/claims.bin"], f.files["plain-small/seal.bin"]); err != nil {
 			t.Fatalf("cache %d: %v", limit, err)
 		}
 	}

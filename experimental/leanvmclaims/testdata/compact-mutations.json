@@ -1,0 +1,169 @@
+{
+  "cases": [
+    {
+      "mutations": [
+        {
+          "accept": false,
+          "at": 779,
+          "name": "usage",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 731,
+          "name": "unused-fixed",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2539,
+          "name": "root-proof",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2368,
+          "name": "pub-contribution",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 16,
+          "name": "column-value",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 193995,
+          "name": "last-seal-byte",
+          "part": "seal"
+        }
+      ],
+      "name": "plain-small"
+    },
+    {
+      "mutations": [
+        {
+          "accept": false,
+          "at": 779,
+          "name": "usage",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 731,
+          "name": "unused-fixed",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2539,
+          "name": "root-proof",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2368,
+          "name": "pub-contribution",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 16,
+          "name": "column-value",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 367555,
+          "name": "last-seal-byte",
+          "part": "seal"
+        }
+      ],
+      "name": "plain-large"
+    },
+    {
+      "mutations": [
+        {
+          "accept": false,
+          "at": 779,
+          "name": "usage",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 731,
+          "name": "unused-fixed",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2539,
+          "name": "root-proof",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2368,
+          "name": "pub-contribution",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 16,
+          "name": "column-value",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 351907,
+          "name": "last-seal-byte",
+          "part": "seal"
+        }
+      ],
+      "name": "mixed-zk"
+    },
+    {
+      "mutations": [
+        {
+          "accept": false,
+          "at": 779,
+          "name": "usage",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 707,
+          "name": "unused-fixed",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2539,
+          "name": "root-proof",
+          "part": "root"
+        },
+        {
+          "accept": false,
+          "at": 2368,
+          "name": "pub-contribution",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 16,
+          "name": "column-value",
+          "part": "seal"
+        },
+        {
+          "accept": false,
+          "at": 353571,
+          "name": "last-seal-byte",
+          "part": "seal"
+        }
+      ],
+      "name": "one-zk"
+    }
+  ],
+  "upstream_commit": "fc3fc9ec0ec218d6b5196ecae85a975590729ae6"
+}

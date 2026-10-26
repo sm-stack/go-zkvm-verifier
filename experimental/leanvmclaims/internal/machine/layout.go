@@ -17,10 +17,11 @@ type Placement struct {
 	Vars, Slot, Stride int
 }
 type Layout struct {
-	Heights    [6]int
-	Placements []Placement
-	Mu, Lanes  int
-	FixedVars  int
+	Heights      [6]int
+	Placements   []Placement
+	Mu, Lanes    int
+	FixedVars    int
+	FixedOffsets []uint64
 }
 
 var ownedColumns = [5]int{9, 7, 19, 65, 4}
@@ -101,7 +102,8 @@ func NewLayout(heights [6]uint64) (*Layout, error) {
 			fixed = append(fixed, l.Heights[t])
 		}
 	}
-	_, fixedSize := offsets(fixed)
+	fixedOffsets, fixedSize := offsets(fixed)
+	l.FixedOffsets = fixedOffsets
 	l.FixedVars = ceilLog(fixedSize)
 	return l, nil
 }

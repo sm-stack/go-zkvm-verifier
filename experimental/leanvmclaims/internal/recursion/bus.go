@@ -3,15 +3,12 @@
 package recursion
 
 import (
-	"errors"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/field"
-	"github.com/sm-stack/go-zkvm-verifier/internal/gf2"
 	"math/bits"
 	"slices"
-	"sync"
 
-	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/classkey"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/machine"
+	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/pcs"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/wire"
 )
 
@@ -70,7 +67,7 @@ type busResult struct {
 	totals [2]E
 }
 
-func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout *machine.Layout, s *machine.Schema) (busResult, error) {
+func bus(r *reader, root wire.Root, layout *machine.Layout, s *machine.Schema, columns *fixedEvaluations) (busResult, error) {
 	var out busResult
 	// Public slot first, then each owned slot: this order fixes equal-size ties.
 	blocks := []block{{table: 5, global: 97, height: layout.Heights[5]}}
@@ -108,46 +105,22 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		return out, err
 	}
 	out.point = point
-	// The class key owns all public columns; no proof-supplied evaluation is trusted.
-	// Scratch has one owner per verification and a configurable retention budget.
-	sizes := make(map[int]bool)
-	count := 0
-	for _, b := range blocks {
-		if !sizes[b.height] {
-			sizes[b.height] = true
-			count += 1 << uint(b.height)
-		}
-	}
-	scratch := takeBusScratch(count)
-	defer releaseBusScratch(scratch)
-	used := 0
-	eqs := make(map[int][]E)
+	// Values are transcript-bound by the seal, but remain unauthenticated until
+	// their returned PCS claims have been checked against the tier commitment.
 	fixed := make(map[int]E)
 	public := func(column, height int, statement bool) (E, error) {
 		if value, ok := fixed[column]; ok {
 			return value, nil
 		}
-		eq, ok := eqs[height]
-		if !ok {
-			n := 1 << uint(height)
-			eq = field.EqTableInto(scratch[used:used+n], point[:height])
-			used += n
-			eqs[height] = eq
-		}
-		words, err := k.Key.ColumnBytes(position, column, len(eq))
-		if err != nil {
-			return E{}, err
-		}
-		value, start := E{}, 0
-		if statement {
-			start = min(len(root.Words), len(eq))
-			if j := column - 98; j < 3 {
-				for row := range start {
-					value = value.Add(eq[row].MulBase(root.Words[row][j]))
-				}
+		value := columns.values[column]
+		columns.claims[column] = pcs.PointClaim{Offset: columns.block + layout.FixedOffsets[column], Point: point[:height], Value: value}
+		columns.seen[column] = true
+		if statement && column-98 < 3 {
+			limb := column - 98
+			for row := 0; row < min(len(root.Words), 1<<uint(height)); row++ {
+				value = value.Add(field.EqBits(uint64(row), point[:height]).MulBase(root.Words[row][limb]))
 			}
 		}
-		value = value.Add(gf2.DotBase(eq[start:], words[8*start:]))
 		fixed[column] = value
 		return value, nil
 	}
@@ -192,44 +165,4 @@ func bus(r *reader, k *classkey.Validated, root wire.Root, position int, layout 
 		out.totals[side] = values[side].Add(acc).Add(padding)
 	}
 	return out, r.Err
-}
-
-const defaultScratchCacheBytes = 24 << 20
-
-var busScratch = struct {
-	sync.Mutex
-	limit  int
-	buffer []E
-}{limit: defaultScratchCacheBytes}
-
-// SetScratchCacheLimit changes the process-wide retained scratch budget in bytes.
-// Zero disables caching, including buffers returned by in-flight verifications.
-func SetScratchCacheLimit(bytes int) error {
-	if bytes < 0 {
-		return errors.New("leanvmclaims: negative scratch cache limit")
-	}
-	busScratch.Lock()
-	defer busScratch.Unlock()
-	busScratch.limit = bytes
-	if cap(busScratch.buffer) > bytes/24 {
-		busScratch.buffer = nil
-	}
-	return nil
-}
-func takeBusScratch(n int) []E {
-	busScratch.Lock()
-	b := busScratch.buffer
-	busScratch.buffer = nil
-	busScratch.Unlock()
-	if cap(b) >= n {
-		return b[:n]
-	}
-	return make([]E, n)
-}
-func releaseBusScratch(b []E) {
-	busScratch.Lock()
-	defer busScratch.Unlock()
-	if busScratch.limit != 0 && cap(b) <= busScratch.limit/24 && cap(b) > cap(busScratch.buffer) {
-		busScratch.buffer = b
-	}
 }

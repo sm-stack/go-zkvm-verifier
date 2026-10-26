@@ -10,13 +10,10 @@ pub fn descriptor(
         Capacity, ClaimShape, LeafClass, LeafShape, ProgramClass, Tier, TreeShape,
     };
     use leanvm::{PerTable, Rate, TableId};
-    let v3 = &bytes[..8] == b"LVMXCK03";
-    assert!(v3 || &bytes[..8] == b"LVMXCK02");
+    assert_eq!(&bytes[..8], b"LVMXCK04");
     let mut words = bytes[8..].as_chunks::<8>().0.iter();
     let mut next = || u64::from_le_bytes(*words.next().unwrap()) as usize;
-    if v3 {
-        let _placement = next();
-    }
+    assert_eq!(next(), 1);
     let n = next();
     let classes: Vec<_> = (0..n)
         .map(|_| {
@@ -29,7 +26,7 @@ pub fn descriptor(
             };
             let heights: [usize; 11] = std::array::from_fn(|_| next());
             let rate = Rate::new(next() as u8).unwrap();
-            let kind = if v3 { next() } else { 0 };
+            let kind = next();
             assert!(kind <= 1);
             let shape =
                 LeafShape::plain(PerTable::from_fn(|t: TableId| heights[t.index()]), rate).unwrap();

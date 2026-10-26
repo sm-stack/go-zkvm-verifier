@@ -1,0 +1,149 @@
+{
+  "cases": [
+    {
+      "accept": true,
+      "name": "original",
+      "offset": 456,
+      "root_accept": true,
+      "rust_panicked": false,
+      "value": 1
+    },
+    {
+      "accept": false,
+      "name": "version3",
+      "offset": 0,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 3688530847432791628
+    },
+    {
+      "accept": false,
+      "name": "zero-leaves",
+      "offset": 16,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 0
+    },
+    {
+      "accept": false,
+      "name": "invalid-small-flag",
+      "offset": 496,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 2
+    },
+    {
+      "accept": false,
+      "name": "first-k-zero",
+      "offset": 56,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 0
+    },
+    {
+      "accept": false,
+      "name": "second-k-zero",
+      "offset": 200,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 0
+    },
+    {
+      "accept": false,
+      "name": "second-ram",
+      "offset": 176,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 28
+    },
+    {
+      "accept": false,
+      "name": "second-image",
+      "offset": 192,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 0
+    },
+    {
+      "accept": false,
+      "name": "arity-zero",
+      "offset": 456,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 0
+    },
+    {
+      "accept": false,
+      "name": "node-arity-one",
+      "offset": 464,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 1
+    },
+    {
+      "accept": false,
+      "name": "small-arity-one",
+      "offset": 504,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 1
+    },
+    {
+      "accept": false,
+      "name": "small-claims-too-large",
+      "offset": 512,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 16386
+    },
+    {
+      "accept": false,
+      "name": "small-groups-too-large",
+      "offset": 520,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 1025
+    },
+    {
+      "accept": false,
+      "name": "circuit-count",
+      "offset": 888,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 8
+    },
+    {
+      "accept": false,
+      "name": "tier-height",
+      "offset": 744,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 18
+    },
+    {
+      "accept": false,
+      "name": "circuit-height",
+      "offset": 904,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 18
+    },
+    {
+      "accept": true,
+      "name": "second-k-change",
+      "offset": 200,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 129
+    },
+    {
+      "accept": true,
+      "name": "class-swap",
+      "offset": 456,
+      "root_accept": false,
+      "rust_panicked": false,
+      "value": 1
+    }
+  ],
+  "upstream_commit": "fc3fc9ec0ec218d6b5196ecae85a975590729ae6"
+}

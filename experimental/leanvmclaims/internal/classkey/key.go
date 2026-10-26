@@ -11,8 +11,8 @@ import (
 	"golang.org/x/crypto/blake2s"
 )
 
-const Pin = "3e269bd4137976648052a3335845d0c19693ec0d"
-const Domain = "leanvm/mixed-class-key/v2"
+const Pin = "fc3fc9ec0ec218d6b5196ecae85a975590729ae6"
+const Domain = "leanvm/mixed-class-key/v4"
 
 var ErrDigest = errors.New("leanvmclaims: class-key digest mismatch")
 var ErrEncoding = errors.New("leanvmclaims: malformed class-key encoding")
@@ -20,22 +20,16 @@ var ErrEncoding = errors.New("leanvmclaims: malformed class-key encoding")
 // Digest uses upstream's exact unkeyed, unframed BLAKE2s domain separation.
 func Digest(data []byte) [32]byte {
 	h, _ := blake2s.New256(nil)
-	domain := Domain
-	if bytes.HasPrefix(data, []byte("LVMXCK03")) {
-		domain = "leanvm/mixed-class-key/v3"
-	}
-	h.Write([]byte(domain))
+	h.Write([]byte(Domain))
 	h.Write(data)
 	var out [32]byte
 	copy(out[:], h.Sum(nil))
 	return out
 }
 
-type Column struct{ Offset, Words int }
 type Circuit struct {
 	StatementWords uint64
 	Heights        [6]uint64
-	Columns        [102]Column
 }
 type Key struct {
 	Digest       [32]byte
@@ -44,7 +38,6 @@ type Key struct {
 	Config       Config
 	Heights      [][6]uint64
 	Circuits     []Circuit
-	data         []byte
 }
 
 type reader struct {
@@ -79,26 +72,18 @@ func (r *reader) heights() (h [6]uint64) {
 	return
 }
 
-// Decode authenticates and parses rec/tree/embed.rs class-key v2/v3. Descriptor
-// values come from the authenticated encoding. No fixed columns are expanded.
+// Decode authenticates and parses rec/tree/embed.rs class-key v4. Descriptor
+// values come from the authenticated encoding. The compact format contains no fixed-column rows.
 func Decode(data []byte, pin [32]byte) (*Key, error) {
 	data = bytes.Clone(data)
 	if Digest(data) != pin {
 		return nil, ErrDigest
 	}
 	r := reader{data: data}
-	magic := r.take(8)
-	v3 := bytes.Equal(magic, []byte("LVMXCK03"))
-	if !v3 && !bytes.Equal(magic, []byte("LVMXCK02")) {
+	if !bytes.Equal(r.take(8), []byte("LVMXCK04")) || r.word() != 1 {
 		return nil, ErrEncoding
 	}
-	recordBytes := uint64(136)
-	if v3 {
-		if r.word() != 1 {
-			return nil, ErrEncoding
-		}
-		recordBytes = 144
-	}
+	const recordBytes = uint64(144)
 	nLeaves := r.word()
 	if r.err != nil || nLeaves == 0 || nLeaves > uint64(len(data)-r.pos)/recordBytes {
 		return nil, ErrEncoding
@@ -111,9 +96,7 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 			c.LeafHeights[j] = r.word()
 		}
 		c.LeafRate = r.word()
-		if v3 {
-			c.Kind = LeafKind(r.word())
-		}
+		c.Kind = LeafKind(r.word())
 	}
 	config.Arity0, config.Arity, config.TreeRate, config.Claims, config.Groups = r.word(), r.word(), r.word(), r.word(), r.word()
 	small := r.word()
@@ -127,9 +110,6 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		return nil, ErrEncoding
 	}
 	zkCount := config.zkCount()
-	if v3 != (zkCount > 0) {
-		return nil, ErrEncoding
-	}
 	tiers := 1 + small + uint64(zkCount)
 	if r.word() != tiers {
 		return nil, ErrEncoding
@@ -160,8 +140,8 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		return nil, ErrEncoding
 	}
 	expectedCircuits := nLeaves + arity - 1 + extra + uint64(zkCount)
-	// Each circuit needs 8 statement bytes, 48 heights, 8 count, 102 lengths.
-	if r.err != nil || n != expectedCircuits || n > uint64(len(data)-r.pos)/880 {
+	// Each compact circuit holds only its statement length and six heights.
+	if r.err != nil || n != expectedCircuits || n > uint64(len(data)-r.pos)/56 {
 		return nil, ErrEncoding
 	}
 	places := config.places()
@@ -171,47 +151,12 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		c.StatementWords = r.word()
 		c.Heights = r.heights()
 		tier := places[i].Tier
-		if c.Heights != k.Heights[tier] || r.word() != 102 {
+		if c.Heights != k.Heights[tier] {
 			return nil, ErrEncoding
-		}
-		for j := range c.Columns {
-			table := 5
-			switch {
-			case j < 4:
-				table = 0
-			case j < 8:
-				table = 1
-			case j < 24:
-				table = 2
-			case j < 89:
-				table = 3
-			case j < 97:
-				table = 4
-			}
-			words := r.word()
-			if r.err != nil || words != uint64(1)<<c.Heights[table] || words > uint64(len(data)-r.pos)/8 {
-				return nil, ErrEncoding
-			}
-			c.Columns[j] = Column{Offset: r.pos, Words: int(words)}
-			r.take(words * 8)
 		}
 	}
 	if r.err != nil || r.pos != len(data) {
 		return nil, ErrEncoding
 	}
-	k.data = data
 	return k, nil
-}
-
-// ColumnBytes returns a read-only view of the first rows little-endian words.
-// Only verifier internals can access this view; callers must not modify it.
-func (k *Key) ColumnBytes(circuit, column, rows int) ([]byte, error) {
-	if circuit < 0 || circuit >= len(k.Circuits) || column < 0 || column >= 102 {
-		return nil, ErrEncoding
-	}
-	c := k.Circuits[circuit].Columns[column]
-	if rows < 0 || rows > c.Words {
-		return nil, ErrEncoding
-	}
-	return k.data[c.Offset : c.Offset+8*rows], nil
 }

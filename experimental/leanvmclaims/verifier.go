@@ -21,10 +21,9 @@ var ErrProof = errors.New("leanvmclaims: invalid sealed proof")
 // reuse it; simultaneous VerifySealed calls are supported. Its zero value rejects.
 type ClassVerifier struct{ class *classkey.Validated }
 
-// NewClassVerifier authenticates a canonical LVMXCK02 or LVMXCK03 class key against an
+// NewClassVerifier authenticates a canonical LVMXCK04 compact class key against an
 // independently trusted digest, then derives its ordered leaf classes and tree
-// configuration. The BLAKE2s digest uses domain leanvm/mixed-class-key/v2
-// for v2 and leanvm/mixed-class-key/v3 for v3, followed by the complete key bytes.
+// configuration. The digest is BLAKE2s-256("leanvm/mixed-class-key/v4" || key).
 // The constructor owns a copy; later caller mutations do not affect verification.
 // Mirrors rec/tree/embed.rs::mixed_classes_from_bytes.
 func NewClassVerifier(classKey []byte, expectedDigest [32]byte) (*ClassVerifier, error) {
@@ -35,7 +34,7 @@ func NewClassVerifier(classKey []byte, expectedDigest [32]byte) (*ClassVerifier,
 	return &ClassVerifier{class: k}, nil
 }
 
-// VerifySealed verifies a version-21 mixed root, canonical claim set and v2 seal.
+// VerifySealed verifies a version-22 mixed root, canonical claim set and v3 seal.
 // Root and seal use the pinned upstream binary encodings. It verifies the complete
 // recursion proof, every carried matrix claim and each fixed-polynomial opening.
 // It does not verify leaf proofs or support same-program trees. Input slices must
@@ -66,13 +65,18 @@ func (v *ClassVerifier) verify(rootBytes []byte, claims ClaimSet, sealBytes []by
 	if err = settlement.Claims(v.class, root, claims); err != nil {
 		return err
 	}
-	if err = recursion.Verify(v.class, root); err != nil {
+	sealVerifier, values, err := settlement.BeginSeal(v.class, root, seal)
+	if err != nil {
+		return err
+	}
+	own, err := recursion.Verify(v.class, root, values)
+	if err != nil {
 		return err
 	}
 	if err = settlement.Matrices(v.class, root); err != nil {
 		return err
 	}
-	return settlement.Seal(v.class, root, seal)
+	return settlement.Seal(v.class, root, sealVerifier, own)
 }
 
 // ClassConfig describes the leaf classes and capacities authenticated by the key.
@@ -107,8 +111,11 @@ func (v *ClassVerifier) Config() ClassConfig {
 	return c
 }
 
-// SetScratchCacheLimit sets the process-wide retained verification scratch limit
-// in bytes (default 24 MiB). Zero releases the cache and disables retention;
-// negative limits return an error. It is safe during concurrent verification.
-// This limits cached memory, not active verification allocations or class keys.
-func SetScratchCacheLimit(bytes int) error { return recursion.SetScratchCacheLimit(bytes) }
+// SetScratchCacheLimit is retained for source compatibility.
+// Deprecated: compact-key verification no longer retains fixed-column scratch.
+func SetScratchCacheLimit(bytes int) error {
+	if bytes < 0 {
+		return errors.New("leanvmclaims: negative scratch cache limit")
+	}
+	return nil
+}

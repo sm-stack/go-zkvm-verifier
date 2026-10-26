@@ -1,16 +1,22 @@
-# Claim-tree reference tools
+# leanVM claim-tree reference tools
 
-The guard mutation suite covers GKR odd/radix-4 checks, zerocheck terminal,
-PoW, Merkle hint authentication, root transcript exhaustion, terminal HASH
-matrix checking and both tier-selection branches. Tier dispatch tests alter
-only the unused derived layout of an existing fixture; they do not constitute
-a new upstream proof fixture with unequal tier heights.
+Cargo.toml, Cargo.lock and common.py pin sm-stack/leanVM to
+`fc3fc9ec0ec218d6b5196ecae85a975590729ae6`.
 
+Run `python3 tools/leanvm-mixed/regenerate.py --check` to replay upstream
+conformance proofs, regenerate rejection vectors and compare primitive vectors,
+WHIR profiles and private machine metadata. Rust is a development dependency;
+the Go library and CLI do not invoke it. Build parallelism is limited to two.
 
-Run `python3 tools/check_guards.py` from the repository root.
-The transcript builders in `internal/testutil` construct targeted negative
-inputs; genuine proof fixtures are generated only by the pinned Rust tools.
+`--source PATH` imports conformance files from a local upstream git checkout;
+`git archive` reads the exact pin without modifying its working tree.
+`--skip-metadata` omits private metadata export. The full source correspondence
+and coverage limits are in [PORTING.md](../../experimental/leanvmclaims/PORTING.md).
 
-Reference generators pin their dependencies in `Cargo.toml`/`Cargo.lock` and fetch the same exact revision for private Rust inspection. `regenerate.py --check` compares component vectors, metadata and 240 complete root decisions. `generate_forgery.py` and `generate_attacks.py` retain upstream attack assertions and export their artifacts. Proof generation commands and the Go/Rust source map are in [PORTING.md](../../experimental/leanvmclaims/PORTING.md).
+`benchmark RAW_DIRECTORY` measures loaded-key sealed verification with one Rust
+worker. The directory contains class-key.bin and root.bin, claims.bin, seal.bin.
+The Go counterpart is `go run ./tools/benchmark-claims -dir RAW_DIRECTORY` and
+also needs class-key.digest (32 raw bytes or 64 hexadecimal characters).
 
-`generate_production.py DIR` produces the uncommitted benchmark class and 357-claim root. `src/bin/benchmark.rs` measures checked load, direct and sealed verification with one worker. `tools/benchmark-claims` measures the Go public API and allocations on those same files. See [PERFORMANCE.md](../../PERFORMANCE.md) for timing and peak-process-memory commands.
+After checks, reclaim build outputs with
+`cargo clean --manifest-path tools/leanvm-mixed/Cargo.toml`.

@@ -51,54 +51,75 @@ RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 
 ## Experimental claim trees
 
-Measured 2026-10-26 on Apple M4 Pro, macOS arm64, Go 1.26.10 and
-Rust 1.99.1. Both verifiers use leanVM
-`3e269bd4137976648052a3335845d0c19693ec0d`. Rust uses the default release profile;
-Go uses `CGO_ENABLED=0`, `GOMAXPROCS=1`. Each implementation uses one worker.
-Three sequential runs alternate Go and Rust on identical input bytes, with
-100 warmed verifications per run. Values are medians of those batch means.
+Measured on Apple M4 Pro, macOS arm64, Go 1.26.10 and Rust 1.99.1. Both use
+one worker (`GOMAXPROCS=1`; Rust pool size 1), with default release optimization
+and no custom RUSTFLAGS. Values below are medians of three alternating Go/Rust
+batches of 100 warmed verifications. Both verify the same serialized fixture;
+loading and Go claim decoding occur outside the verification timer.
 
-| Operational fixture | Key bytes | Claims | Go verify | Rust verify | Go / Rust |
+The current pin is `fc3fc9ec0ec218d6b5196ecae85a975590729ae6`. All four cases use
+the same 1,288-byte operational class key with digest `5345ead0…`.
+
+| Fixture | Members | Go | Rust | Go/Rust | Go allocated bytes/op |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| v2, `5926b5cf…` | 92,550,040 | 6 | 6.022 ms | 3.949 ms | 1.52× |
-| v3, `ce8d9001…` | 116,251,536 | 7 | 6.780 ms | 4.333 ms | 1.56× |
+| plain-small | 256 | 4.319 ms | 2.526 ms | 1.71× | 7,817,136 |
+| plain-large | 384 | 5.249 ms | 3.016 ms | 1.74× | 8,303,112 |
+| mixed-zk | 144 | 4.945 ms | 2.806 ms | 1.76× | 8,175,912 |
+| one-zk | 16 | 4.928 ms | 2.798 ms | 1.76× | 8,177,720 |
 
-| Operational fixture | Go load | Rust load | Go load allocated | Go verify bytes/op | Allocs/op |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| v2 | 160.923 ms | 147.059 ms | 108,229,736 B | 8,137,176 | 3,574 |
-| v3 | 189.816 ms | 188.146 ms | 131,953,672 B | 8,542,640 | 4,596 |
+Go batches ranged 4.317–4.325, 5.246–5.266, 4.939–5.206 and 4.874–4.938 ms,
+respectively. Rust batches ranged 2.479–2.600, 2.996–3.119, 2.798–2.867 and
+2.780–2.815 ms. These local samples are not cross-machine guarantees.
 
-These are different aggregates: v3 adds a private-program claim, a dedicated
-ZK tier and a LeafWrap. Its seal is 523,172 bytes versus 346,936 for v2. The
-comparison does not isolate the cost of ZK or measure full-capacity operation.
-Shared-host interference was visible: Go batches ranged 5.873–6.048 ms (v2)
-and 6.549–9.777 ms (v3); Rust ranged 3.935–13.482 ms and 4.294–4.336 ms.
+### Key loading and previous-format baseline
 
-Go decodes the root/seal on every call; Rust times already-decoded objects.
-Claim decoding, file reads and fixture decompression are outside both loops.
-Load allocation includes the Go key copy and lazy circuit metadata; it is
-allocated bytes, not peak RSS. Verification retains the default one-buffer
-scratch cache, capped at 24 MiB. `SetScratchCacheLimit(0)` releases and disables
-that cache; the limit does not cap active allocations or loaded class keys.
+The baseline binary was built from Go commit `02d7ea9b25b2bfaabc388b3ad1028f01857f3e4a`
+before changing the verifier. Its operational v3 fixture has seven members and
+key digest `ce8d9001…`. The compact fixture uses the same class dimensions, but
+different programs/member sets. Verification time is therefore **not** an
+apples-to-apples speedup comparison with that baseline.
 
-Reproduce directly from the shipped fixtures:
+| Go measurement | Baseline | Compact key |
+| --- | ---: | ---: |
+| Serialized key | 116,251,536 B | 1,288 B |
+| First load in a new process | 191.787 ms | 46.454–50.274 ms |
+| Bytes allocated during first load | 131,953,512 B | about 15,690,600 B |
+| Sealed verify | 6.629 ms (7 members) | see fixture-specific table above |
+
+First-load allocation excludes the caller's already-read key. It includes the
+one-time decoding of shared circuit metadata, which now dominates Go startup.
+With that metadata initialized, repeated compact-key loads take 21–25 µs,
+69,152 B/op and 106 allocations/op. Rust compact-key load samples were
+0.628–0.910 ms; its descriptor adapter runs before the load timer. Neither
+allocation figures nor Go's heap-in-use counter represent peak RSS.
+
+Compact verification retains no process-wide bus scratch buffer. The deprecated
+`SetScratchCacheLimit` API is a compatibility no-op.
+
+### Reproduce
+
+Extract one checked-in fixture into a raw artifact directory:
 
 ```sh
-CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
-  -run '^$' -bench '^BenchmarkOperationalZK$' -benchmem -count=3
-```
-
-For paired Rust/Go process measurements, decompress each operational fixture's
-`class-key.bin.gz`, `class-key.digest.gz` and `production/{root,claims,seal}.bin.gz`
-into one directory, then run:
-
-```sh
+python3 - <<'PYTHON'
+import gzip
+from pathlib import Path
+base = Path('experimental/leanvmclaims/testdata/compact')
+out = Path('/tmp/compact-benchmark')
+out.mkdir(exist_ok=True)
+for name in ['class-key.bin', 'class-key.digest',
+             'mixed-zk/root.bin', 'mixed-zk/claims.bin', 'mixed-zk/seal.bin']:
+    (out / Path(name).name).write_bytes(gzip.decompress((base / (name+'.gz')).read_bytes()))
+PYTHON
 CGO_ENABLED=0 go build -o /tmp/benchmark-claims ./tools/benchmark-claims
-GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/operational-v3 -n 100
-cargo run --locked --release -j 2 --manifest-path tools/leanvm-zk/Cargo.toml \
-  --bin benchmark -- /tmp/operational-v3
+GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/compact-benchmark -n 100
+cargo run --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml \
+  --bin benchmark -- /tmp/compact-benchmark
+CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
+  -run '^$' -bench '^BenchmarkClassLoad$' -benchmem -count 3
 ```
 
-The fixture provenance and source snapshots are described in
-[the ZK reference tools](tools/leanvm-zk/README.md). No new leaf proving is needed
-for these measurements.
+Use `plain-small`, `plain-large` or `one-zk` instead of `mixed-zk` for the other
+cases. No proof generation is needed. The baseline fixture and implementation
+can be recovered from the baseline git commit; old formats are not accepted by
+the current verifier.

@@ -163,7 +163,7 @@ The reference workflow regenerates Rust artifacts on pull requests or manual run
 
 ## Experimental extension: leanVM claim trees
 
-`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`3e269bd4137976648052a3335845d0c19693ec0d`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental. It accepts unchanged plain v2 class keys and v3 keys containing ZK leaf classes. It verifies the aggregate root, not the ZK leaf proof itself; members, program keys and shapes remain public.
+`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`fc3fc9ec0ec218d6b5196ecae85a975590729ae6`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental. It accepts compact v4 class keys for plain and ZK leaf classes, version 22 roots and v3 seals. It verifies the aggregate root, not the ZK leaf proof itself; members, program keys and shapes remain public.
 
 Authenticate a class key once, then reuse the verifier concurrently:
 
@@ -190,7 +190,7 @@ CGO_ENABLED=0 GOMAXPROCS=2 go test ./experimental/leanvmclaims -run '^$' -fuzz '
 
 Tests replay one- and two-tier roots, rehashed descriptor mutations, and an Optimism operational-class aggregate against pinned Rust verdicts.
 
-`leanvmclaims.SetScratchCacheLimit(0)` disables the process-wide scratch cache for memory-sensitive hosts; the default retained budget is 24 MiB. This does not cap active verification memory.
+The compact class key contains commitment roots and dimensions, with no fixed-column rows. Every root requires a seal authenticating its own columns. There is no persistent bus scratch cache; `SetScratchCacheLimit` remains a deprecated compatibility no-op.
 
 Class-key or digest errors exit **2**; rejected root/claims/seal inputs exit **1**. The command adds no byte-size cap. See [PORTING.md](experimental/leanvmclaims/PORTING.md) for the wire format, integration adapter, source mapping and fixture generation.
 

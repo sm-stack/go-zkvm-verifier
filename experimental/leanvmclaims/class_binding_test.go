@@ -1,77 +1,92 @@
-// Mirrors rec/tree/design.rs::position and seal.rs::fixed_polys.
 package leanvmclaims
 
 import (
 	"encoding/binary"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/classkey"
-	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/settlement"
-	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/transcript"
-	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims/internal/wire"
+	fixture "github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"testing"
 )
 
-func TestClassAndKindBindings(t *testing.T) {
+func TestAuthenticatedClassMutations(t *testing.T) {
 	f := loadFixtures(t)
-	for _, name := range []string{"first", "first-class1", "small-node", "wide"} {
-		root := append([]byte(nil), f.files[name+"/root.bin"]...)
-		root[11] ^= 1 // first/node marker must agree with authenticated circuit position
-		if verifyEncoded(f.verifier, root, f.files[name+"/claims.bin"], f.files[name+"/seal.bin"]) == nil {
-			t.Fatal("wrong kind accepted", name)
+	var vectors struct {
+		Pin   string `json:"upstream_commit"`
+		Cases []struct {
+			Name         string
+			Offset       int
+			Value        uint64
+			Accept       bool
+			RootAccept   bool `json:"root_accept"`
+			RustPanicked bool `json:"rust_panicked"`
+		}
+	}
+	fixture.JSON(t, "testdata/compact-class-mutations.json", &vectors)
+	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != 18 {
+		t.Fatal("missing class vectors")
+	}
+	for _, c := range vectors.Cases {
+		t.Run(c.Name, func(t *testing.T) {
+			if c.RustPanicked {
+				t.Fatal("Rust oracle panicked; no verdict")
+			}
+			key := append([]byte(nil), f.files["class-key.bin"]...)
+			binary.LittleEndian.PutUint64(key[c.Offset:], c.Value)
+			if c.Name == "class-swap" {
+				a := append([]byte(nil), key[24:168]...)
+				copy(key[24:168], key[168:312])
+				copy(key[168:312], a)
+			}
+			v, err := NewClassVerifier(key, classkey.Digest(key))
+			if err == nil && (verifyEncoded(v, f.files["one-zk/root.bin"], f.files["one-zk/claims.bin"], f.files["one-zk/seal.bin"]) == nil) != c.RootAccept {
+				t.Fatal("root verdict differs after reauthentication")
+			}
+			if (err == nil) != c.Accept {
+				t.Fatalf("Go error=%v Rust accept=%v panic=%v", err, c.Accept, c.RustPanicked)
+			}
+		})
+	}
+}
+
+func TestClassContainerGuards(t *testing.T) {
+	f := loadFixtures(t)
+	const leaf0 = 24
+	const leaf1 = leaf0 + 144
+	const shape = leaf0 + 3*144
+	const heights = shape + (6+3+2)*8 + 6*32 + 8
+	const count = heights + 3*48
+	for _, edit := range []struct {
+		at    int
+		value uint64
+	}{{leaf0 + 32, 0}, {leaf1 + 32, 0}, {shape, 0}, {shape + 48, 1}, {shape + 56, 16386}, {shape + 64, 1025}, {heights, 33}, {8, 0}, {16, 0}, {shape + 40, 2}} {
+		key := append([]byte(nil), f.files["class-key.bin"]...)
+		binary.LittleEndian.PutUint64(key[edit.at:], edit.value)
+		if _, e := classkey.Decode(key, classkey.Digest(key)); e == nil {
+			t.Fatalf("container offset %d", edit.at)
 		}
 	}
 	key := append([]byte(nil), f.files["class-key.bin"]...)
-	key[7] ^= 1
-	if _, err := NewClassVerifier(key, classkey.Digest(key)); err == nil {
-		t.Fatal("unsupported key version accepted")
+	k, e := classkey.Decode(key, classkey.Digest(key))
+	if e != nil {
+		t.Fatal(e)
 	}
-	// These check digest authentication; rehashed descriptors are exercised in
-	// TestAuthenticatedClassMutations against Rust verdicts.
-	for _, offset := range []int{16 + 32, 16 + 136 + 32} { // K of each authenticated leaf class
-		key = append([]byte(nil), f.files["class-key.bin"]...)
-		key[offset] ^= 1
-		if _, err := NewClassVerifier(key, f.pin); err == nil {
-			t.Fatal("changed member capacity accepted")
-		}
+	key = append(key, key[len(key)-56:]...)
+	binary.LittleEndian.PutUint64(key[count:], uint64(len(k.Circuits)+1))
+	if _, e := classkey.Decode(key, classkey.Digest(key)); e == nil {
+		t.Fatal("extra circuit")
 	}
 	key = append([]byte(nil), f.files["class-key.bin"]...)
-	a := append([]byte(nil), key[16:152]...)
-	copy(key[16:152], key[152:288])
-	copy(key[152:288], a)
-	if _, err := NewClassVerifier(key, f.pin); err == nil {
-		t.Fatal("reordered classes accepted")
+	key[count+16] ^= 1
+	if _, e := classkey.Decode(key, classkey.Digest(key)); e == nil {
+		t.Fatal("circuit heights")
 	}
 }
-func TestFirstLevelSealSessionException(t *testing.T) {
-	f := loadFixtures(t)
-	changed := *f.verifier.class
-	changed.SealSession[0] ^= 1
-	for _, name := range []string{"first", "first-class1", "small-node", "wide"} {
-		root, err := wire.DecodeRoot(f.files[name+"/root.bin"])
-		if err != nil {
-			t.Fatal(err)
-		}
-		seal, err := transcript.Decode(f.files[name+"/seal.bin"])
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = settlement.Seal(&changed, root, seal)
-		first := name == "first" || name == "first-class1"
-		if (err == nil) != first {
-			t.Fatalf("%s wrong-session seal: %v", name, err)
-		}
-	}
-}
-func TestAuthenticatedAllocationBounds(t *testing.T) {
-	f := loadFixtures(t)
-	// There are enough encoded bytes for these counts, but this class disallows them.
-	claims := make([]byte, 4+52*5)
-	binary.LittleEndian.PutUint32(claims, 5)
-	if _, err := f.verifier.DecodeClaims(claims); err == nil {
-		t.Fatal("group bound")
-	}
-	root := append([]byte(nil), f.files["first/root.bin"]...)
-	binary.LittleEndian.PutUint32(root[7:], uint32(f.verifier.class.StatementWords+1))
-	if verifyEncoded(f.verifier, root, f.files["first/claims.bin"], f.files["first/seal.bin"]) == nil {
-		t.Fatal("statement bound")
-	}
+func FuzzAuthenticatedDescriptor(f *testing.F) {
+	x := loadFixtures(f)
+	f.Add(uint16(56), uint64(0))
+	f.Fuzz(func(t *testing.T, at uint16, v uint64) {
+		key := append([]byte(nil), x.files["class-key.bin"]...)
+		offset := 8 * (int(at) % (len(key) / 8))
+		binary.LittleEndian.PutUint64(key[offset:], v)
+		_, _ = NewClassVerifier(key, classkey.Digest(key))
+	})
 }

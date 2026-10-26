@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/hex"
 	"github.com/sm-stack/go-zkvm-verifier/experimental/leanvmclaims"
 	"github.com/sm-stack/go-zkvm-verifier/internal/testutil"
 	"os"
@@ -10,8 +11,8 @@ import (
 	"testing"
 )
 
-func TestLeanVMClaimsCLI(t *testing.T) { testClaimsCLI(t, "roots", testutil.ClaimsV2Pin, 20) }
-func TestZKClaimsCLI(t *testing.T)     { testClaimsCLI(t, "zk", leanvmclaims.UpstreamCommit, 23) }
+func TestLeanVMClaimsCLI(t *testing.T) { testClaimsCLI(t, "compact", leanvmclaims.UpstreamCommit, 20) }
+
 func testClaimsCLI(t *testing.T, corpus, pin string, count int) {
 	base := filepath.Join("..", "..", "experimental", "leanvmclaims", "testdata", corpus)
 	_, files := testutil.Load(t, base, pin, count)
@@ -25,10 +26,10 @@ func testClaimsCLI(t *testing.T, corpus, pin string, count int) {
 		return path
 	}
 	key := unpack("class-key.bin")
-	root := unpack("first/root.bin")
-	claims := unpack("first/claims.bin")
-	seal := unpack("first/seal.bin")
-	args := []string{"leanvm-claims", "-class-key", key, "-digest", string(files["class-key.digest"]), "-root", root, "-claims", claims, "-seal", seal}
+	root := unpack("one-zk/root.bin")
+	claims := unpack("one-zk/claims.bin")
+	seal := unpack("one-zk/seal.bin")
+	args := []string{"leanvm-claims", "-class-key", key, "-digest", hex.EncodeToString(files["class-key.digest"]), "-root", root, "-claims", claims, "-seal", seal}
 	check := func(args []string, want int) string {
 		t.Helper()
 		var out, diag bytes.Buffer
@@ -42,7 +43,7 @@ func testClaimsCLI(t *testing.T, corpus, pin string, count int) {
 		return diag.String()
 	}
 	check(args, 0)
-	for _, name := range []string{"small-node", "wide"} {
+	for _, name := range []string{"plain-small", "plain-large", "mixed-zk"} {
 		node := append([]string(nil), args...)
 		node[6] = unpack(name + "/root.bin")
 		node[8] = unpack(name + "/claims.bin")
@@ -55,9 +56,9 @@ func testClaimsCLI(t *testing.T, corpus, pin string, count int) {
 		}
 		check(node, 1)
 	}
-	unpack("first/root.bin")
-	unpack("first/claims.bin")
-	unpack("first/seal.bin")
+	unpack("one-zk/root.bin")
+	unpack("one-zk/claims.bin")
+	unpack("one-zk/seal.bin")
 
 	for _, index := range []int{2, 6, 8, 10} {
 		nonregular := append([]string(nil), args...)
