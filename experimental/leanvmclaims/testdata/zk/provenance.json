@@ -1,0 +1,98 @@
+{
+  "upstream_commit": "3e269bd4137976648052a3335845d0c19693ec0d",
+  "generator": "tools/leanvm-zk/package.py",
+  "files": {
+    "class-key.bin": {
+      "bytes": 60644240,
+      "sha256": "5bf24b6e6cc5ea807da3e5d5b534ce9b27e93380f2beb9bfef93ed56a764027a"
+    },
+    "class-key.digest": {
+      "bytes": 64,
+      "sha256": "46c5961eb4ce401025ed19b5332afe15c09b9414adbb705b74e1088577844aca"
+    },
+    "first/claims.bin": {
+      "bytes": 152,
+      "sha256": "6edc3e6e190ea1723c85387d25c26e519f320a73751f76fbcdbb73e45d7cd2fe"
+    },
+    "first/root.bin": {
+      "bytes": 248955,
+      "sha256": "a2cecefa5fc4adcf195475f3fe63768972a73e5d0ab8d766010a54aae8a4650a"
+    },
+    "first/seal.bin": {
+      "bytes": 8,
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+    },
+    "first-class1/claims.bin": {
+      "bytes": 88,
+      "sha256": "4877bda9eefc643b3b0adecda559fc29b1d9e6a808a5556685dbb3d474f3c850"
+    },
+    "first-class1/root.bin": {
+      "bytes": 248859,
+      "sha256": "34b5ca40ad75e9c355e6230f1c992d455b051b7cdbdba03985e54983fa2ccfb2"
+    },
+    "first-class1/seal.bin": {
+      "bytes": 8,
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+    },
+    "fold-dedup/claims.bin": {
+      "bytes": 320,
+      "sha256": "e08590543cd1e8a9d8cbb8ab781d0193e901607e8182ddc8f81a3cb4d514b466"
+    },
+    "fold-dedup/root.bin": {
+      "bytes": 248411,
+      "sha256": "27e6a99708c3efad0b5c8653b49b03fb09372e9cf279dfd628c00215c53343ee"
+    },
+    "fold-dedup/seal.bin": {
+      "bytes": 483008,
+      "sha256": "4dbc7a4e769b6f0fb6899cc922a4e8bcb26f6c02dd78d87f812aa577abebdbc3"
+    },
+    "one-member/claims.bin": {
+      "bytes": 88,
+      "sha256": "8adde6b7ca70d129edfa0d860e3b69b852c7c683c4eaff3deb65d1925e972e42"
+    },
+    "one-member/root.bin": {
+      "bytes": 248091,
+      "sha256": "cb2047c2fd9bd72e4f93476d92326bdb2d769537fe0e6711912f342d442067c5"
+    },
+    "one-member/seal.bin": {
+      "bytes": 484032,
+      "sha256": "140d65e4630f32592cdf3b41a0b60407e7c7413ff8c0ef335286abfe2ed2bd2d"
+    },
+    "raw-zk-first/claims.bin": {
+      "bytes": 88,
+      "sha256": "8adde6b7ca70d129edfa0d860e3b69b852c7c683c4eaff3deb65d1925e972e42"
+    },
+    "raw-zk-first/root.bin": {
+      "bytes": 269483,
+      "sha256": "ce752f44d101aa446e7db76b739d7c51f6fe2e2ee8c67f32c6e7e462da25870c"
+    },
+    "raw-zk-first/seal.bin": {
+      "bytes": 8,
+      "sha256": "af5570f5a1810b7af78caf4bc70a660f0df51e42baf91d4de5b2328de0e83dfc"
+    },
+    "small-node/claims.bin": {
+      "bytes": 172,
+      "sha256": "897f1feae537537c385befcab2aab836a279b923627d32fc5a2e1bbb7a24d3a6"
+    },
+    "small-node/root.bin": {
+      "bytes": 247963,
+      "sha256": "28dd40bf01a6086f61d71ea825600c4dc168f23f7a61a8be7ec88e84ec8bc127"
+    },
+    "small-node/seal.bin": {
+      "bytes": 482528,
+      "sha256": "02df103ef23b474473cba8aa9d980701dfaef4e4dd67afdf6d33dba076570c39"
+    },
+    "wide/claims.bin": {
+      "bytes": 320,
+      "sha256": "e08590543cd1e8a9d8cbb8ab781d0193e901607e8182ddc8f81a3cb4d514b466"
+    },
+    "wide/root.bin": {
+      "bytes": 248571,
+      "sha256": "d4c1ba49252ce777a2a8f11c416b0665a582f7a1c75b9f28cbaf0cd7f5baadb4"
+    },
+    "wide/seal.bin": {
+      "bytes": 481408,
+      "sha256": "c2f14eadbe80ba4e71ae73765536826763b4fdd47337c6f9ecfed88e3fced188"
+    }
+  }
+}

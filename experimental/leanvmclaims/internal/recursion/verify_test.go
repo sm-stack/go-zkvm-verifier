@@ -14,7 +14,7 @@ import (
 
 func recursionFixture(t *testing.T) (*classkey.Validated, func(string) wire.Root) {
 	t.Helper()
-	_, files := fixture.Load(t, "../../testdata/roots", classkey.Pin, 20)
+	_, files := fixture.Load(t, "../../testdata/roots", fixture.ClaimsV2Pin, 20)
 	key := files["class-key.bin"]
 	k, err := classkey.Load(key, classkey.Digest(key))
 	if err != nil {

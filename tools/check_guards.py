@@ -57,8 +57,8 @@ MIXED_CASES = [
  ('pcs/merkle.go', 'return nil, v.InvalidHint()', 'return nil, nil', 'pcs', 'TestReadRowsAuthentication'),
  ('recursion/verify.go', 'if err = v.EOF(); err != nil {', 'if false {', 'recursion', 'TestRootEOFBinding'),
  ('recursion/verify.go', 'return replay[0].Matrix.Check(hash, make([]E, len(hash.Gates)))', 'return nil', 'recursion', 'TestHashMatrixBinding'),
- ('recursion/verify.go', 'tier = 1', 'tier = 0', 'recursion', 'TestTierLayoutSelection'),
- ('recursion/verify.go', 'tier := 0', 'tier := 1', 'recursion', 'TestTierLayoutSelection'),
+ ('recursion/verify.go', 'layout := k.Layouts[tier]', 'layout := k.Layouts[tier%1]', 'recursion', 'TestTierLayoutSelection'),
+ ('recursion/verify.go', 'tier := k.Places[position].Tier', 'tier := 1', 'recursion', 'TestTierLayoutSelection'),
 ]
 # Every entry uses (source, replacement site, replacement, package, regression).
 mutations = [('sp1/'+file, 'if '+condition+' {', 'if false && ('+condition+') {', './sp1', test)
@@ -72,7 +72,10 @@ mutations += [
 mutations += [(CLAIMS+file, old, new, './'+CLAIMS+package, test)
               for file, old, new, package, test in MIXED_CASES]
 mutations += [
- ('experimental/leanvmclaims/internal/recursion/verify.go', 'len(k.Layouts) == 2 &&', '', './experimental/leanvmclaims', 'TestRustOneTierVerdicts'),
+ ('experimental/leanvmclaims/internal/settlement/settlement.go', 'if !k.Places[position].First {', 'if position >= len(k.Config.Leaves) {', './experimental/leanvmclaims', 'TestZKRoots'),
+ ('experimental/leanvmclaims/internal/classkey/semantic.go', 'tag = append(tag, byte(leaf.Kind))', 'tag = append(tag, byte(leaf.Kind)*0)', './experimental/leanvmclaims', 'TestZKRoots'),
+ ('experimental/leanvmclaims/internal/classkey/key.go', 'if r.word() != 1 {', 'if r.word() > 1 {', './experimental/leanvmclaims', 'TestZKContainer'),
+ ('experimental/leanvmclaims/internal/recursion/verify.go', 'tier := k.Places[position].Tier', 'tier := min(k.Places[position].Tier, 1)', './experimental/leanvmclaims', 'TestZKRoots'),
  ('experimental/leanvmclaims/internal/settlement/settlement.go', ' || uint64(root.Rate) != k.Config.TreeRate', '', './experimental/leanvmclaims', 'TestRootRateBinding'),
 ]
 mutations += [

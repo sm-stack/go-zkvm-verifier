@@ -12,11 +12,20 @@ import (
 
 var ErrClass = errors.New("leanvmclaims: invalid class or inconsistent verifier data")
 
+// LeafKind selects the upstream leaf verifier embedded in the class circuits.
+type LeafKind uint64
+
+const (
+	Plain LeafKind = iota
+	ZeroKnowledge
+)
+
 // LeafClass mirrors rec/tree/mixed.rs::LeafClass and ProgramClass.
 type LeafClass struct {
 	LogBytecode, LogRAM, LogAdvice, ImageWords, MaxMembers uint64
 	LeafHeights                                            [11]uint64
 	LeafRate                                               uint64
+	Kind                                                   LeafKind
 }
 
 // Config is derived from the authenticated class-key descriptor.
@@ -38,7 +47,7 @@ func (c Config) check() error {
 		return ErrClass
 	}
 	for _, leaf := range c.Leaves {
-		if leaf.LeafRate < 1 || leaf.LeafRate > 4 || leaf.MaxMembers == 0 {
+		if leaf.Kind > ZeroKnowledge || leaf.LeafRate < 1 || leaf.LeafRate > 4 || leaf.MaxMembers == 0 {
 			return ErrClass
 		}
 	}
@@ -54,7 +63,8 @@ type Validated struct {
 	Key                                         *Key
 	Config                                      Config
 	Layouts                                     []*machine.Layout
-	DenseVars                                   [4]int
+	DenseVars                                   []int
+	Places                                      []Place
 	DensePointVars, Polynomials, StatementWords int
 	TierShift                                   int
 	Codes                                       []uint64
@@ -92,14 +102,21 @@ func Load(data []byte, pin [32]byte) (*Validated, error) {
 	}
 	// Decode has already bounded the circuit count by the actual encoded bytes.
 	count := len(k.Circuits)
-	smallCount := count
-	if len(v.Layouts) == 2 {
-		smallCount--
+	v.Places = config.places()
+	starts := make([]int, len(v.Layouts))
+	counts := make([]int, len(v.Layouts))
+	for i, p := range v.Places {
+		if counts[p.Tier] == 0 {
+			starts[p.Tier] = i
+		}
+		counts[p.Tier]++
 	}
-	v.TierShift = bits.Len(uint(smallCount - 1))
-	v.DenseVars = [4]int{int(first.LogBytecode) + s.TupleBits, bits.Len64(first.ImageWords - 1), v.Layouts[0].FixedVars + v.TierShift, 0}
-	if len(v.Layouts) == 2 {
-		v.DenseVars[3] = v.Layouts[1].FixedVars
+	v.DenseVars = make([]int, 2+max(2, len(v.Layouts)))
+	v.DenseVars[0], v.DenseVars[1] = int(first.LogBytecode)+s.TupleBits, bits.Len64(first.ImageWords-1)
+	for tier, l := range v.Layouts {
+		kindBits := bits.Len(uint(counts[tier] - 1))
+		v.TierShift = max(v.TierShift, kindBits)
+		v.DenseVars[2+tier] = l.FixedVars + kindBits
 	}
 	for _, n := range v.DenseVars {
 		v.DensePointVars = max(v.DensePointVars, n)
@@ -110,17 +127,23 @@ func Load(data []byte, pin [32]byte) (*Validated, error) {
 		if c.StatementWords != uint64(v.StatementWords) {
 			return nil, ErrClass
 		}
-		v.Codes[i] = uint64(i) << 1
-		if i == smallCount {
-			v.Codes[i] = uint64(1) << uint(v.TierShift+1)
-		}
-		if i >= len(config.Leaves) {
+		place := v.Places[i]
+		slot := (uint64(place.Tier) << uint(v.TierShift)) | uint64(i-starts[place.Tier])
+		v.Codes[i] = slot << 1
+		if !place.First {
 			v.Codes[i] |= 1
 		}
 	}
 	v.ProgramDigest = placeholderDigest(k.Placeholders[0], first)
 	tag := append([]byte("leanvm-tree-18"), v.ProgramDigest[:]...)
 	tag = append(tag, []byte("/mixed-members/2")...)
+	if config.zkCount() > 0 {
+		tag = append(tag, []byte("/zk-leaves/1")...)
+		tag = append(tag, 1)
+		for _, leaf := range config.Leaves {
+			tag = append(tag, byte(leaf.Kind))
+		}
+	}
 	tag = appendWords(tag, first.MaxMembers, uint64(len(config.Leaves)-1))
 	for i, leaf := range config.Leaves[1:] {
 		digest := placeholderDigest(k.Placeholders[i+1], leaf)
@@ -156,5 +179,56 @@ func placeholderDigest(root [32]byte, c LeafClass) [32]byte {
 	}
 	var out [32]byte
 	copy(out[:], h.Sum(nil))
+	return out
+}
+
+// Place maps the serialized circuit order to its tier and First/Node marker.
+// Wrap and LeafWrap both use the Node marker and require fixed-claim settlement.
+type Place struct {
+	Tier  int
+	First bool
+}
+
+func (c Config) zkCount() int {
+	n := 0
+	for _, l := range c.Leaves {
+		if l.Kind == ZeroKnowledge {
+			n++
+		}
+	}
+	return n
+}
+
+// places mirrors Design::new_with_zk. Call only after circuit count is bounded
+// by the encoded input, so an authenticated but oversized arity cannot allocate.
+func (c Config) places() []Place {
+	var out []Place
+	zk := c.zkCount()
+	for _, l := range c.Leaves {
+		if l.Kind == Plain {
+			out = append(out, Place{0, true})
+		}
+	}
+	arity := c.Arity
+	base := 1
+	if c.Small != nil {
+		arity = c.Small.Arity
+		base = 2
+	}
+	for a := uint64(2); a <= arity; a++ {
+		out = append(out, Place{0, false})
+	}
+	if c.Small != nil {
+		out = append(out, Place{0, false})
+	}
+	for i := 0; i < zk; i++ {
+		out = append(out, Place{0, false})
+	}
+	if c.Small != nil {
+		out = append(out, Place{1, false})
+	}
+	for i := 0; i < zk; i++ {
+		out = append(out, Place{base + i, true})
+	}
 	return out
 }

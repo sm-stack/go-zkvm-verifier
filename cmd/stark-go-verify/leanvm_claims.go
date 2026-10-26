@@ -19,7 +19,7 @@ func runLeanVMClaims(args []string, out, diagnostics io.Writer) int {
 		fmt.Fprintln(diagnostics, "Experimental sealed claim-tree verification for the pinned sm-stack leanVM fork.")
 		fs.PrintDefaults()
 	}
-	keyPath := fs.String("class-key", "", "raw LVMXCK02 class-key file")
+	keyPath := fs.String("class-key", "", "raw LVMXCK02 or LVMXCK03 class-key file")
 	digestHex := fs.String("digest", "", "independently trusted class-key digest (64 hex characters)")
 	rootPath := fs.String("root", "", "raw version-21 claim-tree root file")
 	claimPath := fs.String("claims", "", "raw claim-set file")

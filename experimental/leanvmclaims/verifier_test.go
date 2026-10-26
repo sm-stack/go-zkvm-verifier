@@ -21,8 +21,11 @@ func loadFixtures(t testing.TB) fixtures {
 	return loadFixtureSet(t, "testdata/roots", 20)
 }
 func loadFixtureSet(t testing.TB, path string, count int) fixtures {
+	return loadFixtureSetAt(t, path, count, fixture.ClaimsV2Pin)
+}
+func loadFixtureSetAt(t testing.TB, path string, count int, origin string) fixtures {
 	t.Helper()
-	_, files := fixture.Load(t, path, UpstreamCommit, count)
+	_, files := fixture.Load(t, path, origin, count)
 	f := fixtures{files: files}
 	pin, err := hex.DecodeString(string(files["class-key.digest"]))
 	if err != nil || len(pin) != 32 {
@@ -51,6 +54,9 @@ func TestRustSealedVerdicts(t *testing.T) {
 	replayVerdicts(t, loadFixtures(t), "testdata/root-components.json")
 }
 func replayVerdicts(t *testing.T, f fixtures, path string) {
+	replayVerdictsAt(t, f, path, fixture.ClaimsV2Pin)
+}
+func replayVerdictsAt(t *testing.T, f fixtures, path, origin string) {
 	var vectors struct {
 		Pin   string `json:"upstream_commit"`
 		Cases []struct {
@@ -64,7 +70,7 @@ func replayVerdicts(t *testing.T, f fixtures, path string) {
 		}
 	}
 	fixture.JSON(t, path, &vectors)
-	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != (len(f.files)-2)/3 {
+	if vectors.Pin != origin || len(vectors.Cases) != (len(f.files)-2)/3 {
 		t.Fatal("stale root verdicts")
 	}
 	for index, c := range vectors.Cases {

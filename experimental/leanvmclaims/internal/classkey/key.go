@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/blake2s"
 )
 
-const Pin = "59c25cccfd5742f8216f259f9dd4d80d9a5f66e5"
+const Pin = "3e269bd4137976648052a3335845d0c19693ec0d"
 const Domain = "leanvm/mixed-class-key/v2"
 
 var ErrDigest = errors.New("leanvmclaims: class-key digest mismatch")
@@ -20,7 +20,11 @@ var ErrEncoding = errors.New("leanvmclaims: malformed class-key encoding")
 // Digest uses upstream's exact unkeyed, unframed BLAKE2s domain separation.
 func Digest(data []byte) [32]byte {
 	h, _ := blake2s.New256(nil)
-	h.Write([]byte(Domain))
+	domain := Domain
+	if bytes.HasPrefix(data, []byte("LVMXCK03")) {
+		domain = "leanvm/mixed-class-key/v3"
+	}
+	h.Write([]byte(domain))
 	h.Write(data)
 	var out [32]byte
 	copy(out[:], h.Sum(nil))
@@ -75,7 +79,7 @@ func (r *reader) heights() (h [6]uint64) {
 	return
 }
 
-// Decode authenticates and parses rec/tree/embed.rs class-key v2. Descriptor
+// Decode authenticates and parses rec/tree/embed.rs class-key v2/v3. Descriptor
 // values come from the authenticated encoding. No fixed columns are expanded.
 func Decode(data []byte, pin [32]byte) (*Key, error) {
 	data = bytes.Clone(data)
@@ -83,11 +87,20 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		return nil, ErrDigest
 	}
 	r := reader{data: data}
-	if !bytes.Equal(r.take(8), []byte("LVMXCK02")) {
+	magic := r.take(8)
+	v3 := bytes.Equal(magic, []byte("LVMXCK03"))
+	if !v3 && !bytes.Equal(magic, []byte("LVMXCK02")) {
 		return nil, ErrEncoding
 	}
+	recordBytes := uint64(136)
+	if v3 {
+		if r.word() != 1 {
+			return nil, ErrEncoding
+		}
+		recordBytes = 144
+	}
 	nLeaves := r.word()
-	if r.err != nil || nLeaves == 0 || nLeaves > uint64(len(data)-r.pos)/136 {
+	if r.err != nil || nLeaves == 0 || nLeaves > uint64(len(data)-r.pos)/recordBytes {
 		return nil, ErrEncoding
 	}
 	config := Config{Leaves: make([]LeafClass, int(nLeaves))}
@@ -98,6 +111,9 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 			c.LeafHeights[j] = r.word()
 		}
 		c.LeafRate = r.word()
+		if v3 {
+			c.Kind = LeafKind(r.word())
+		}
 	}
 	config.Arity0, config.Arity, config.TreeRate, config.Claims, config.Groups = r.word(), r.word(), r.word(), r.word(), r.word()
 	small := r.word()
@@ -110,7 +126,11 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 	if r.word() != 2 || config.check() != nil {
 		return nil, ErrEncoding
 	}
-	tiers := 1 + small
+	zkCount := config.zkCount()
+	if v3 != (zkCount > 0) {
+		return nil, ErrEncoding
+	}
+	tiers := 1 + small + uint64(zkCount)
 	if r.word() != tiers {
 		return nil, ErrEncoding
 	}
@@ -134,24 +154,23 @@ func Decode(data []byte, pin [32]byte) (*Key, error) {
 		arity = config.Small.Arity
 		extra = 2
 	}
-	// Count is N + arity - 1 for one tier, N + small arity + 1 for two.
-	if arity-1 > ^uint64(0)-nLeaves-extra {
+	// Plain count is N + arity - 1, or N + small arity + 1 with a large tier.
+	// Each ZK class moves its First to a dedicated tier and adds one LeafWrap.
+	if arity-1 > ^uint64(0)-nLeaves-extra-uint64(zkCount) {
 		return nil, ErrEncoding
 	}
-	expectedCircuits := nLeaves + arity - 1 + extra
+	expectedCircuits := nLeaves + arity - 1 + extra + uint64(zkCount)
 	// Each circuit needs 8 statement bytes, 48 heights, 8 count, 102 lengths.
 	if r.err != nil || n != expectedCircuits || n > uint64(len(data)-r.pos)/880 {
 		return nil, ErrEncoding
 	}
+	places := config.places()
 	k.Circuits = make([]Circuit, int(n))
 	for i := range k.Circuits {
 		c := &k.Circuits[i]
 		c.StatementWords = r.word()
 		c.Heights = r.heights()
-		tier := 0
-		if small == 1 && i == len(k.Circuits)-1 {
-			tier = 1
-		}
+		tier := places[i].Tier
 		if c.Heights != k.Heights[tier] || r.word() != 102 {
 			return nil, ErrEncoding
 		}

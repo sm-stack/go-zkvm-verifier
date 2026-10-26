@@ -1,6 +1,6 @@
 # Experimental leanVM claim-tree verifier
 
-This package verifies sealed roots of program-labelled member sets. It implements the custom `op-stack/claim-set-leaves` protocol in [sm-stack/leanVM](https://github.com/sm-stack/leanVM/tree/59c25cccfd5742f8216f259f9dd4d80d9a5f66e5), package 0.1.0, commit **`59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`**. It is independent of the standalone ELF/proof verifier in `leanvm/` and is not upstream leanVM main's protocol.
+This package verifies sealed roots of program-labelled member sets. It implements the custom `op-stack/claim-set-leaves` protocol in [sm-stack/leanVM](https://github.com/sm-stack/leanVM/tree/3e269bd4137976648052a3335845d0c19693ec0d), package 0.1.0, commit **`3e269bd4137976648052a3335845d0c19693ec0d`**. It is independent of the standalone ELF/proof verifier in `leanvm/` and is not upstream leanVM main's protocol.
 
 ## API and trust
 
@@ -16,7 +16,7 @@ if err != nil {
 return v.VerifySealed(claims, root, seal)
 ```
 
-The constructor authenticates the complete key using `BLAKE2s-256("leanvm/mixed-class-key/v2" || encoding)`, reads its ordered leaf classes and tree configuration, validates the layout, and owns a copy of the bytes. The digest must come from trusted application configuration. Hashing an attacker's self-selected key does not authorize its circuits. Load once and reuse concurrently; proof and claim slices must remain unchanged during verification. Constructor errors wrap `ErrClass`; verification errors wrap `ErrProof`.
+The constructor authenticates the complete key using `BLAKE2s-256(domain || encoding)`, where the domain is `leanvm/mixed-class-key/v2` for v2 and `leanvm/mixed-class-key/v3` for v3, reads its ordered leaf classes and tree configuration, validates the layout, and owns a copy of the bytes. The digest must come from trusted application configuration. Hashing an attacker's self-selected key does not authorize its circuits. Load once and reuse concurrently; proof and claim slices must remain unchanged during verification. Constructor errors wrap `ErrClass`; verification errors wrap `ErrProof`.
 
 The application separately authorizes normalized program VK digests and supplies the intended members. A member is an entry of the list committed by a guest, not necessarily the execution output. For a signature guest, the application must recompute the intended key/message member and enforce any freshness or replay policy.
 
@@ -47,13 +47,28 @@ func aggregateVerifier(v *leanvmclaims.ClassVerifier) ProofAggregateVerifier {
 
 ## Protocol and resource policy
 
-The supported encodings are `LVMXCK02` class keys, `LVMT` envelope version 21, and framed seal session `SessionId::tagged("leanvm/mixed-tree-seal/v2", class_key_digest)`. Root sessions use `leanvm-tree-18` and `/mixed-members/2`, including every leaf descriptor and member capacity. Other versions, malformed encodings and trailing data are refused.
+The supported encodings are `LVMXCK02` (plain) and `LVMXCK03` (ZK-containing) class keys, `LVMT` envelope version 21, and framed seal session `SessionId::tagged("leanvm/mixed-tree-seal/v2", class_key_digest)`. Root sessions use `leanvm-tree-18` and `/mixed-members/2`, including every leaf descriptor and member capacity. Other versions, malformed encodings and trailing data are refused.
 
-Each leaf class has its own first-level circuit. A **first-level root** aggregates leaf executions; a **small node** combines child roots within the small tier. **Wide** is the large-capacity tier. A **wrap** represents a large-tier child in the small tier for further aggregation. All first-level classes share small-tier padded heights. Kind codes bind the tier, local circuit index and first/node marker; the selected key supplies the fixed columns.
+Each leaf class has its own first-level circuit. A **first-level root** aggregates leaf executions; a **small node** combines child roots within the small tier. **Wide** is the large-capacity tier. A **wrap** represents a large-tier child in the small tier for further aggregation. Plain first-level classes share small-tier padded heights. Each ZK class has a dedicated first-level tier; a LeafWrap brings its proof back into the small tier. Kind codes bind the tier, local circuit index and first/node marker; the selected key supplies the fixed columns.
 
 Verification checks the recursion transcript, flock, GKR bus, constraints, witness openings and EOF, then settles matrix and fixed-polynomial claims. Every first-level root has an empty seal, including nonzero class indices. Changing only the seal session therefore does not invalidate that empty seal; node and wrap seals bind it. The checked constructor independently rejects all key/digest mismatches before any proof is accepted.
 
-The package supports plain mixed trees with one or two tiers. Proving, circuit building, leaf-proof verification, same-program trees, zero-knowledge leaves and formal verification are outside its scope. Runtime code requires neither Rust nor CGO. Shared `internal/gf2` uses arm64 PMULL with runtime feature detection, or a portable fallback selected by `purego` and on other architectures.
+The package supports plain and ZK-containing mixed trees, with an optional small/large aggregation split and one dedicated tier per ZK class. Proving, circuit building, leaf-proof verification (including outer Spartan), same-program trees and formal verification are outside its scope. Runtime code requires neither Rust nor CGO. Shared `internal/gf2` uses arm64 PMULL with runtime feature detection, or a portable fallback selected by `purego` and on other architectures.
+
+V3 accepts only placement 1 (isolated ZK first levels); the measurement-only
+shared placement is rejected. Circuit order is plain Firsts, small Nodes, optional
+large-tier Wrap, LeafWraps, optional large Node, then dedicated ZK Firsts. The
+loader derives each circuit's tier, checks its heights against that tier and
+sizes the statement and seal openings from the full tier list. ZK sessions add
+`/zk-leaves/1`, placement byte 1 and ordered class-kind bytes immediately after
+`/mixed-members/2`. `Config().Leaves[i].Kind` reports `PlainLeaf` or
+`ZeroKnowledgeLeaf`; leaf rates can differ from the tree rate.
+
+The pinned Rust verifier accepts a raw dedicated-tier ZK First as a final root
+with an empty seal, although Nodes refuse it as a child. The public Rust prover
+normally returns a LeafWrap. The Go root verifier preserves this distinction;
+it does not impose an extra root-kind restriction. ZK does not hide the public
+members, program keys or shape metadata.
 
 There is no additional library byte budget. The key is copied once; fixed columns are read in place, and placeholder zero images are hashed without materializing program tables. Root statement and decoded claim allocations are checked against the authenticated class. Other transcript data is read from supplied slices. CPU and memory still depend on the class and input sizes; service limits are application policy and may reject upstream-valid inputs. See the repository [security assumptions](../../README.md#security-assumptions-and-limits).
 
@@ -61,7 +76,7 @@ The CLI reads raw binary regular files. It authenticates the key before reading 
 
 ## Fixtures and reproduction
 
-All required tests use committed fixtures and fail if any are missing or have the wrong pin/hash. Genuine proof directories carry uncompressed SHA-256 hashes and sizes in `provenance.json`; `artifacts.json` also covers stored files and generated constants. Fixture generation uses Rust at the pinned commit. Upstream licensing and attribution are retained in `NOTICE` and `LICENSES/`.
+All required tests use committed fixtures and fail if any are missing or have the wrong pin/hash. Genuine proof directories carry uncompressed SHA-256 hashes and sizes in `provenance.json`; `artifacts.json` also covers stored files and generated constants. Fixture manifests retain their exact generating commits. The v2 corpus originates at `59c25ccc…`; current Rust also replays those root verdicts. Upstream licensing and attribution are retained in `NOTICE` and `LICENSES/`.
 
 | Artifact | Coverage |
 | --- | --- |
@@ -71,6 +86,8 @@ All required tests use committed fixtures and fail if any are missing or have th
 | `forgery/` | `assert_fake_large_wrap_refused`: forged child fails recursion; wrap recursion passes but authenticated settlement fails |
 | `member-attacks/` | Upstream member-list forgeries, foreign-kind/fixed-polynomial attack, and valid roots of both classes including actual leanSPHINCS signatures |
 | `statements.json` | Statement conversion, canonical order and duplicate rejection |
+| `zk/`, `zk-only/`, `zk-*-vectors.json` | Plain/plain/ZK roots, LeafWrap, raw ZK First, large-tier root, all-ZK class without a small/large split; rehashed descriptor mutations |
+| `operational-v2/`, `operational-v3/` | Actual Optimism aggregate snapshots; class keys `5926b5cf…` and `ce8d9001…`, regenerated byte for byte |
 | Component JSONs | Rust fields, transcripts, wire formats, Merkle, WHIR, stack, flock, layouts and matrix evaluation |
 
 The member attack exporter retains the upstream assertions, including row-level list/shape tests, folds, capacity rollback, and the first-level empty-seal exception. The Go tests replay exported root outcomes; leaf row tests themselves run only in Rust.
@@ -81,7 +98,10 @@ CGO_ENABLED=0 GOMAXPROCS=2 go test -p 1 -tags purego ./...
 CGO_ENABLED=1 GOMAXPROCS=2 go test -race -p 1 ./...
 python3 tools/check_artifacts.py
 python3 tools/leanvm-mixed/regenerate.py --check
+python3 tools/leanvm-zk/check.py
 ```
+
+ZK fixture generation and snapshot provenance are documented in [the reference tools](../../tools/leanvm-zk/README.md). ZK proof randomness means newly generated proof bytes may differ; class-key bytes are deterministic.
 
 Explicit proof generation uses two workers. All source modifications happen in disposable exact-pin checkouts and add inspection/export adapters; no original workspace or Cargo checkout is edited.
 

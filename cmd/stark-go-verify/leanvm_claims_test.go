@@ -10,9 +10,11 @@ import (
 	"testing"
 )
 
-func TestLeanVMClaimsCLI(t *testing.T) {
-	base := filepath.Join("..", "..", "experimental", "leanvmclaims", "testdata", "roots")
-	_, files := testutil.Load(t, base, leanvmclaims.UpstreamCommit, 20)
+func TestLeanVMClaimsCLI(t *testing.T) { testClaimsCLI(t, "roots", testutil.ClaimsV2Pin, 20) }
+func TestZKClaimsCLI(t *testing.T)     { testClaimsCLI(t, "zk", leanvmclaims.UpstreamCommit, 23) }
+func testClaimsCLI(t *testing.T, corpus, pin string, count int) {
+	base := filepath.Join("..", "..", "experimental", "leanvmclaims", "testdata", corpus)
+	_, files := testutil.Load(t, base, pin, count)
 	dir := t.TempDir()
 	unpack := func(name string) string {
 		t.Helper()

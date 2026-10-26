@@ -202,8 +202,8 @@ Scalar reference permutation and bit-serial field arithmetic are tested separate
 ## Experimental leanVM claim trees (custom fork protocol)
 
 `experimental/leanvmclaims` supports sm-stack/leanVM package 0.1.0 at
-`59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`, branch
-`op-stack/claim-set-leaves`. It authenticates LVMXCK02 class keys, LVMT v21
+`3e269bd4137976648052a3335845d0c19693ec0d`, branch
+`op-stack/claim-set-leaves`. It authenticates LVMXCK02 and LVMXCK03 class keys, LVMT v21
 roots and framed mixed-tree-seal/v2 seals. The standalone leanVM and SP1 pins above are unchanged. See
 [the experimental claim-tree verifier documentation](experimental/leanvmclaims/PORTING.md) for the complete
 Go/Rust source mapping, fixture licensing, regeneration commands, scope and
@@ -223,3 +223,13 @@ arithmetic, including chunk boundaries and unaligned word input. Recursion
 evaluation retains one scratch buffer with a default 24 MiB budget; concurrent
 calls acquire exclusive buffers. `SetScratchCacheLimit` changes this budget;
 buffers exceeding it are not retained.
+
+ZK class-key support uses `tools/leanvm-zk/` at the current pin. The older v2
+corpus, unchanged VM matrix metadata and PCS profiles retain their actual
+origin pin, `59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`.
+`python3 tools/leanvm-zk/check.py` replays old and new roots with the current Rust
+verifier and reconstructs both operational keys byte for byte. Operational v2
+`5926b5cf…` and v3 `ce8d9001…` snapshots are documented in
+`tools/leanvm-zk/production/provenance.json`; the v3 Optimism integration was an
+uncommitted working tree, identified by source hashes. This is separate from
+the published leanVM protocol commit.

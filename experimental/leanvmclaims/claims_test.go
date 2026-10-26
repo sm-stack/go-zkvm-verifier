@@ -18,7 +18,7 @@ func TestRustStatementMapping(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "testdata/statements.json", &vectors)
-	if vectors.Pin != UpstreamCommit || len(vectors.Cases) != 7 {
+	if vectors.Pin != fixture.ClaimsV2Pin || len(vectors.Cases) != 7 {
 		t.Fatal("stale statement vectors")
 	}
 	for _, c := range vectors.Cases {

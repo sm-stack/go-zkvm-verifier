@@ -21,9 +21,10 @@ var ErrProof = errors.New("leanvmclaims: invalid sealed proof")
 // reuse it; simultaneous VerifySealed calls are supported. Its zero value rejects.
 type ClassVerifier struct{ class *classkey.Validated }
 
-// NewClassVerifier authenticates a canonical LVMXCK02 class key against an
+// NewClassVerifier authenticates a canonical LVMXCK02 or LVMXCK03 class key against an
 // independently trusted digest, then derives its ordered leaf classes and tree
-// configuration. The digest is BLAKE2s-256("leanvm/mixed-class-key/v2" || classKey).
+// configuration. The BLAKE2s digest uses domain leanvm/mixed-class-key/v2
+// for v2 and leanvm/mixed-class-key/v3 for v3, followed by the complete key bytes.
 // The constructor owns a copy; later caller mutations do not affect verification.
 // Mirrors rec/tree/embed.rs::mixed_classes_from_bytes.
 func NewClassVerifier(classKey []byte, expectedDigest [32]byte) (*ClassVerifier, error) {
@@ -79,6 +80,14 @@ type ClassConfig = classkey.Config
 
 // LeafClass describes one supported program class and its leaf-proof bounds.
 type LeafClass = classkey.LeafClass
+
+// LeafKind identifies the leaf verifier encoded in the authenticated class.
+type LeafKind = classkey.LeafKind
+
+const (
+	PlainLeaf         LeafKind = classkey.Plain
+	ZeroKnowledgeLeaf LeafKind = classkey.ZeroKnowledge
+)
 
 // SmallTier describes the optional lower-capacity recursion tier.
 type SmallTier = classkey.SmallTier

@@ -1,0 +1,62 @@
+{
+  "upstream_commit": "3e269bd4137976648052a3335845d0c19693ec0d",
+  "generator": "tools/leanvm-zk/package.py",
+  "files": {
+    "class-key.bin": {
+      "bytes": 28986376,
+      "sha256": "c68019ccb30cc928141c5487efb73bda8ebef910af63a5da7372eee362c353c8"
+    },
+    "class-key.digest": {
+      "bytes": 64,
+      "sha256": "12988b528ece3348558d883dfd3d61fb3a4e264d9d80b8e8af13cc9b310891e2"
+    },
+    "first/claims.bin": {
+      "bytes": 152,
+      "sha256": "6edc3e6e190ea1723c85387d25c26e519f320a73751f76fbcdbb73e45d7cd2fe"
+    },
+    "first/root.bin": {
+      "bytes": 248563,
+      "sha256": "6055d75bb24f82cac01f76a43fb4832f90126b8aef133764de2b52330fea9bae"
+    },
+    "first/seal.bin": {
+      "bytes": 316984,
+      "sha256": "ad23966eb507ab023feb7c9457431c387ba4ee946feb3d0d7bca9d8928125f2c"
+    },
+    "first-class1/claims.bin": {
+      "bytes": 88,
+      "sha256": "4877bda9eefc643b3b0adecda559fc29b1d9e6a808a5556685dbb3d474f3c850"
+    },
+    "first-class1/root.bin": {
+      "bytes": 248275,
+      "sha256": "f46ead712550630ecafe1971a533bb2d2164790c4a3e210313e81c7ccae285ff"
+    },
+    "first-class1/seal.bin": {
+      "bytes": 318200,
+      "sha256": "acd81bd5874b22f74d95d887a46abc6928d1b22957dfe82394bab25028b395e6"
+    },
+    "one-member/claims.bin": {
+      "bytes": 88,
+      "sha256": "8adde6b7ca70d129edfa0d860e3b69b852c7c683c4eaff3deb65d1925e972e42"
+    },
+    "one-member/root.bin": {
+      "bytes": 248563,
+      "sha256": "f429c2fc9c4432520759e0b624294e1b452fd931b0b1605f648fbbaf2acf9e00"
+    },
+    "one-member/seal.bin": {
+      "bytes": 317176,
+      "sha256": "58edb3d68db7a7326e258f2deeef67e1060b38b8a8a8fb1e924bdcbc61b3ea1a"
+    },
+    "small-node/claims.bin": {
+      "bytes": 172,
+      "sha256": "897f1feae537537c385befcab2aab836a279b923627d32fc5a2e1bbb7a24d3a6"
+    },
+    "small-node/root.bin": {
+      "bytes": 249075,
+      "sha256": "b094f9272c69f22a6f79a9a80aa38a3e990e3f2b59483a5952a37869cf05eef0"
+    },
+    "small-node/seal.bin": {
+      "bytes": 316344,
+      "sha256": "d5206ba7b78f96c741a599d1ea2619cc5687377f2ca8e753832141c51db66aa2"
+    }
+  }
+}

@@ -51,61 +51,54 @@ RAYON_NUM_THREADS=1 tools/sp1/target/release/examples/benchmark_verify DIR
 
 ## Experimental claim trees
 
-Measured on the same host, with one worker per implementation. Each number is
-the median of three sequential process runs, 100 warmed verifications per run.
-Rust and Go were alternated on identical input bytes. The baseline is commit
-`f74db79`; current Go precomputes equality weights and evaluates both matrix
-coefficients in one traversal. Other host work was active during measurement.
+Measured 2026-10-26 on Apple M4 Pro, macOS arm64, Go 1.26.10 and
+Rust 1.99.1. Both verifiers use leanVM
+`3e269bd4137976648052a3335845d0c19693ec0d`. Rust uses the default release profile;
+Go uses `CGO_ENABLED=0`, `GOMAXPROCS=1`. Each implementation uses one worker.
+Three sequential runs alternate Go and Rust on identical input bytes, with
+100 warmed verifications per run. Values are medians of those batch means.
 
-| Fixture | Baseline Go | Current Go | Rust | Current Go / Rust |
-| --- | ---: | ---: | ---: | ---: |
-| Optimism operational class, 6 claims | 9.898 ms | 6.065 ms | 4.085 ms | 1.48× |
-| Fork example, 357 claims | 11.695 ms | 7.851 ms | 5.458 ms | 1.44× |
+| Operational fixture | Key bytes | Claims | Go verify | Rust verify | Go / Rust |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| v2, `5926b5cf…` | 92,550,040 | 6 | 6.022 ms | 3.949 ms | 1.52× |
+| v3, `ce8d9001…` | 116,251,536 | 7 | 6.780 ms | 4.333 ms | 1.56× |
 
-Both use leanVM `59c25cccfd5742f8216f259f9dd4d80d9a5f66e5` and a
-60,027,800-byte key, but different authenticated class configurations. The
-operational key digest is `b20ff9b907b2320fb8139f2753172235ae2e0a66fbad11c4a55500dfb4d33b50`;
-the fork example starts `05860eb9`. The operational fixture is shipped in
-`experimental/leanvmclaims/testdata/production` and includes program executions
-and signatures. It is not a full-capacity stress benchmark.
+| Operational fixture | Go load | Rust load | Go load allocated | Go verify bytes/op | Allocs/op |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| v2 | 160.923 ms | 147.059 ms | 108,229,736 B | 8,137,176 | 3,574 |
+| v3 | 189.816 ms | 188.146 ms | 131,953,672 B | 8,542,640 | 4,596 |
 
-Operational-class verification allocated 8,120,536 bytes / 3,566 objects per
-operation, versus 8,108,248 bytes / 3,564 objects at baseline. The 357-claim
-fixture allocated 8,179,952 bytes / 3,708 objects, versus 8,167,664 bytes / 3,706
-objects. Precomputed equality tables add 12 KiB and two allocations per operation.
+These are different aggregates: v3 adds a private-program claim, a dedicated
+ZK tier and a LeafWrap. Its seal is 523,172 bytes versus 346,936 for v2. The
+comparison does not isolate the cost of ZK or measure full-capacity operation.
+Shared-host interference was visible: Go batches ranged 5.873–6.048 ms (v2)
+and 6.549–9.777 ms (v3); Rust ranged 3.935–13.482 ms and 4.294–4.336 ms.
 
-Equality scratch retains one buffer with a default 24 MiB budget across calls;
-concurrent calls own separate scratch. `SetScratchCacheLimit(0)` disables caching
-and releases its retained buffer. With caching disabled, the operational fixture
-measured 6.138 ms and 13,256,920 bytes/op; the 357-claim fixture measured 7.972 ms
-and 18,477,296 bytes/op. Retained memory is excluded from bytes/op. The cache limit
-does not cap active verification allocations or loaded class keys.
+Go decodes the root/seal on every call; Rust times already-decoded objects.
+Claim decoding, file reads and fixture decompression are outside both loops.
+Load allocation includes the Go key copy and lazy circuit metadata; it is
+allocated bytes, not peak RSS. Verification retains the default one-buffer
+scratch cache, capped at 24 MiB. `SetScratchCacheLimit(0)` releases and disables
+that cache; the limit does not cap active allocations or loaded class keys.
 
-Operational-class cold loading took 124.597 ms in Go and 101.113 ms in Rust.
-Go allocated about 75.7 MB during loading, including its defensive key copy and
-lazy circuit metadata initialization. This work does not optimize class loading.
-The Go verification loop decodes root/seal bytes each time; Rust verifies decoded
-objects. Claim decoding and file I/O are outside both loops.
-
-Reproduce without generating any new proof:
-
-```sh
-cargo run --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml --bin production_key -- /tmp/claims-production
-python3 tools/leanvm-mixed/production_fixture.py /tmp/claims-production --check
-CGO_ENABLED=0 go build -o /tmp/benchmark-claims ./tools/benchmark-claims
-cargo build --locked --release -j 2 --manifest-path tools/leanvm-mixed/Cargo.toml --bin benchmark
-# Run sequentially, three times each:
-GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claims-production -n 100
-tools/leanvm-mixed/target/release/benchmark /tmp/claims-production
-# Measure without retaining scratch between verifications:
-GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/claims-production -n 100 -scratch-cache-bytes 0
-```
-
-For the fork example, `generate_production.py OUT` generates its separate class
-and proofs with two workers; benchmark `OUT/two-class` with the same commands.
-The committed small corpus has Go benchmarks as well:
+Reproduce directly from the shipped fixtures:
 
 ```sh
 CGO_ENABLED=0 GOMAXPROCS=1 go test -p 1 ./experimental/leanvmclaims \
-  -run '^$' -bench 'Benchmark(ClassLoad|VerifySealed)$' -benchmem -benchtime=20x -count=3
+  -run '^$' -bench '^BenchmarkOperationalZK$' -benchmem -count=3
 ```
+
+For paired Rust/Go process measurements, decompress each operational fixture's
+`class-key.bin.gz`, `class-key.digest.gz` and `production/{root,claims,seal}.bin.gz`
+into one directory, then run:
+
+```sh
+CGO_ENABLED=0 go build -o /tmp/benchmark-claims ./tools/benchmark-claims
+GOMAXPROCS=1 /tmp/benchmark-claims -dir /tmp/operational-v3 -n 100
+cargo run --locked --release -j 2 --manifest-path tools/leanvm-zk/Cargo.toml \
+  --bin benchmark -- /tmp/operational-v3
+```
+
+The fixture provenance and source snapshots are described in
+[the ZK reference tools](tools/leanvm-zk/README.md). No new leaf proving is needed
+for these measurements.

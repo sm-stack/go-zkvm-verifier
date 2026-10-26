@@ -163,7 +163,7 @@ The reference workflow regenerates Rust artifacts on pull requests or manual run
 
 ## Experimental extension: leanVM claim trees
 
-`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`59c25cccfd5742f8216f259f9dd4d80d9a5f66e5`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental.
+`experimental/leanvmclaims` verifies sealed claim-tree roots for the sm-stack custom fork `op-stack/claim-set-leaves` at **`3e269bd4137976648052a3335845d0c19693ec0d`** (package version 0.1.0). A root authenticates program-labelled members from one or more leaf classes. Members are entries committed by a guest, not necessarily its execution output. The API is experimental. It accepts unchanged plain v2 class keys and v3 keys containing ZK leaf classes. It verifies the aggregate root, not the ZK leaf proof itself; members, program keys and shapes remain public.
 
 Authenticate a class key once, then reuse the verifier concurrently:
 

@@ -83,10 +83,7 @@ func verifyWithSchema(k *classkey.Validated, root wire.Root, schema *machine.Sch
 	if err != nil {
 		return err
 	}
-	tier := 0
-	if len(k.Layouts) == 2 && position == len(k.Codes)-1 {
-		tier = 1
-	}
+	tier := k.Places[position].Tier
 	layout := k.Layouts[tier]
 	v, err := transcript.NewVerifier(k.RootSession, root.Instance(), root.Proof)
 	if err != nil {

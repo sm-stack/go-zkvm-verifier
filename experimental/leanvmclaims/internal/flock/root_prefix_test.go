@@ -31,7 +31,7 @@ func TestRustRootComponents(t *testing.T) {
 		}
 	}
 	fixture.JSON(t, "../../testdata/root-components.json", &verdicts)
-	if verdicts.Pin != classkey.Pin || len(verdicts.Cases) != 6 {
+	if verdicts.Pin != fixture.ClaimsV2Pin || len(verdicts.Cases) != 6 {
 		t.Fatal("stale Rust root verdicts")
 	}
 	for _, c := range verdicts.Cases {
@@ -44,7 +44,7 @@ func TestRustRootComponents(t *testing.T) {
 			}
 		}
 	}
-	_, files := fixture.Load(t, base, classkey.Pin, 20)
+	_, files := fixture.Load(t, base, fixture.ClaimsV2Pin, 20)
 	digest, err := hex.DecodeString(string(files["class-key.digest"]))
 	if err != nil {
 		t.Fatal(err)

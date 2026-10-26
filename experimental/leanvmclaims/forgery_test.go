@@ -17,7 +17,7 @@ import (
 func TestUpstreamForgedWrap(t *testing.T) {
 	f := loadFixtures(t)
 	base := "testdata/forgery"
-	m, files := fixture.Load(t, base, UpstreamCommit, 5)
+	m, files := fixture.Load(t, base, fixture.ClaimsV2Pin, 5)
 	if len(m.Verdicts) != 3 || !m.Verdicts["wrap_recursion"] || m.Verdicts["child_recursion"] || m.Verdicts["wrap_sealed"] {
 		t.Fatal("invalid forgery verdicts")
 	}
@@ -63,7 +63,7 @@ func TestUpstreamForgedWrap(t *testing.T) {
 // The pinned upstream tests also exercise member-list constraints and a fake
 // same-height first-level circuit under another class's authenticated kind.
 func TestUpstreamMemberAttacks(t *testing.T) {
-	_, files := fixture.Load(t, "testdata/member-attacks", UpstreamCommit, 34)
+	_, files := fixture.Load(t, "testdata/member-attacks", fixture.ClaimsV2Pin, 34)
 	pin := [32]byte(fixture.Hex(t, string(files["class-key.digest"])))
 	verifier, err := NewClassVerifier(files["class-key.bin"], pin)
 	if err != nil {

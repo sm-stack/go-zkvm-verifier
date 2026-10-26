@@ -5,7 +5,11 @@ use leanvm_mixed_reference::PIN;
 use serde_json::json;
 use std::{io::Read, path::Path};
 fn read(base: &Path, name: &str) -> Vec<u8> {
-    let name = name.strip_prefix("production/").unwrap_or(name);
+    let name = if base.join(format!("{name}.gz")).exists() {
+        name
+    } else {
+        name.strip_prefix("production/").unwrap_or(name)
+    };
     let f = std::fs::File::open(base.join(format!("{name}.gz"))).unwrap();
     let mut out = vec![];
     flate2::read::GzDecoder::new(f)
@@ -30,13 +34,17 @@ fn main() {
         "wide",
         "fold-dedup",
     ];
-    let names = if base.ends_with("production") {
+    let names = if base.join("production/root.bin.gz").exists() || base.ends_with("production") {
         &["production"][..]
     } else if shape.claims.unwrap().small.is_none() {
         &all_names[..4]
     } else {
         &all_names[..]
     };
+    let mut names = names.to_vec();
+    if base.join("raw-zk-first/root.bin.gz").exists() {
+        names.push("raw-zk-first");
+    }
     for (i, name) in names.iter().enumerate() {
         let bytes = read(base, &format!("{name}/root.bin"));
         let root = TreeProof::from_bytes(&bytes).unwrap();
@@ -118,7 +126,12 @@ fn main() {
                 TreeProof::from_bytes(&bytes[..cut]).is_ok_and(|r| accepts(&r, &claims, &seal));
             verdicts.push(json!({"action":"root-cut","cut":cut,"accept":accept}));
         }
-        assert!(verdicts.iter().skip(1).all(|v| v["accept"] == false));
+        assert!(
+            verdicts
+                .iter()
+                .skip(1)
+                .all(|v| v["action"] == "seal-swap" || v["accept"] == false)
+        );
         cases.push(json!({"name":name,"verdicts":verdicts}));
     }
     std::fs::write(

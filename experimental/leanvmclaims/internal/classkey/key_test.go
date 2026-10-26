@@ -39,21 +39,21 @@ func vectors(t testing.TB) []vector {
 		Classes []vector
 	}
 	fixture.JSON(t, "../../testdata/classes.json", &v)
-	if v.Pin != Pin || len(v.Classes) != 2 {
+	if v.Pin != fixture.ClaimsV2Pin || len(v.Classes) != 2 {
 		t.Fatal("stale or missing Rust vectors")
 	}
 	manifest, e := os.ReadFile("../../../../tools/leanvm-mixed/Cargo.toml")
 	if e != nil {
 		t.Fatal(e)
 	}
-	if !strings.Contains(string(manifest), `rev = "`+Pin+`"`) {
+	if !strings.Contains(string(manifest), `rev = "`+fixture.ClaimsV2Pin+`"`) {
 		t.Fatal("Rust dependency pin differs")
 	}
 	lock, e := os.ReadFile("../../../../tools/leanvm-mixed/Cargo.lock")
 	if e != nil {
 		t.Fatal(e)
 	}
-	if !strings.Contains(string(lock), "#"+Pin) {
+	if !strings.Contains(string(lock), "#"+fixture.ClaimsV2Pin) {
 		t.Fatal("Rust lock pin differs")
 	}
 	return v.Classes
